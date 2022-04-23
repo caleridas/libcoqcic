@@ -1,0 +1,27 @@
+Source: libcoqcic
+Priority: optional
+Maintainer: Helge Bahmann <hcb@chaoticmind.net>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.8
+Section: libs
+
+Package: libcoqcic-dev
+Section: libdevel
+Architecture: any
+Depends: libcoqcic0 (= ${binary:Version}), ${misc:Depends}
+Description: Library to represent Coq CIC in C++
+ This library provides structures to represent coq cic
+ plus its module system in C++ and import it throuh an
+ sexpr representation.
+ .
+ This package provides development headers and libraries for libcoqcic.
+
+Package: libcoqcic0
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Library to represent Coq CIC in C++
+ This library provides structures to represent coq cic
+ plus its module system in C++ and import it throuh an
+ sexpr representation.
+ .
+ This package provides the main library.

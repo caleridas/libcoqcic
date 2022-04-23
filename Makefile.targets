@@ -1,0 +1,50 @@
+default: all
+
+libcoqcic_SOURCES = \
+	coqcic/constr.cc \
+	coqcic/fix_specialize.cc \
+	coqcic/from_sexpr.cc \
+	coqcic/normalize.cc \
+	coqcic/parse_sexpr.cc \
+	coqcic/sfb.cc \
+	coqcic/simpl.cc \
+	coqcic/visitor.cc \
+	coqcic/sexpr.cc \
+	coqcic/mainpage.cc \
+
+libcoqcic_HEADERS = \
+	coqcic/constr.h \
+	coqcic/fix_specialize.h \
+	coqcic/from_sexpr.h \
+	coqcic/normalize.h \
+	coqcic/parse_result.h \
+	coqcic/parse_sexpr.h \
+	coqcic/sfb.h \
+	coqcic/simpl.h \
+	coqcic/visitor.h \
+	coqcic/shared_stack.h \
+	coqcic/sexpr.h \
+
+libcoqcic_TESTS = \
+	coqcic/constr_test \
+	coqcic/from_sexpr_test \
+	coqcic/fix_specialize_test \
+	coqcic/normalize_test \
+	coqcic/parse_sexpr_test \
+	coqcic/shared_stack_test \
+	coqcic/simpl_test \
+
+libcoqcic_VERSION = 0.0.1
+libcoqcic_SOVERSION = 0
+
+PKGCONFIG_FILES += libcoqcic.pc
+
+$(eval $(call common_library,libcoqcic))
+
+sexpr_parser_sample_SOURCES = \
+	coqcic/sexpr_parser_sample.cc
+
+sexpr_parser_sample_LIBS = \
+	libcoqcic.a
+
+$(eval $(call common_executable,sexpr_parser_sample))

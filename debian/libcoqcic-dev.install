@@ -1,0 +1,4 @@
+usr/include/*
+usr/lib/*/libcoqcic.so
+usr/lib/*/libcoqcic.a
+usr/lib/*/pkgconfig/libcoqcic.pc

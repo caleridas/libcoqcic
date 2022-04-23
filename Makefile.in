@@ -1,0 +1,49 @@
+# (c) 2023 Helge Bahmann <hcb@chaoticmind.net>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License version 2.
+# Refer to the file "COPYING" for details.
+
+# configuration variables from autoconf
+
+SHELL = /bin/sh
+VPATH = @srcdir@
+
+subdirs = @subdirs@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sysconfdir = @sysconfdir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+includedir = @includedir@
+mandir = @mandir
+
+CC = @CC@
+CXX = @CXX@
+YACC = @YACC@
+FLEX = flex
+CPPFLAGS = -I. @CPPFLAGS@
+CXXFLAGS = --std=c++17 -Wall @CXXFLAGS@
+LDFLAGS = @LDFLAGS@
+COVERAGEFLAGS = -fprofile-arcs -ftest-coverage
+LIBS = @LIBS@
+INSTALL = @INSTALL@
+ENABLE_SHARED = @ENABLE_SHARED@
+ENABLE_COVERAGE = @ENABLE_COVERAGE@
+VERSION = @VERSION@
+
+# Macros to generate targets.
+include Makefile.macros
+
+# What to build -- may be parameterized by variables above, but
+# otherwise this is configuration-independent.
+include Makefile.targets
+
+# How to build -- independent of targets, may be partially parameterized
+# by vars above.
+include Makefile.rules
+
+.PHONY:
