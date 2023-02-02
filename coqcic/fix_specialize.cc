@@ -161,6 +161,9 @@ visit_for_fix_closure_state(
 			new_apply_args = new_apply_args.push(visit_for_fix_closure_state(arg, state, locals, {}));
 		}
 		return visit_for_fix_closure_state(apply->fn(), state, locals, new_apply_args);
+	} else if (auto cast = c.as_cast()) {
+		// The type term cannot refer to fixpoint closure.
+		return visit_for_fix_closure_state(cast->term(), state, locals, {});
 	} else if (auto match_case = c.as_case()) {
 		visit_for_fix_closure_state(match_case->arg(), state, locals, {});
 		for (const auto& branch : match_case->branches()) {

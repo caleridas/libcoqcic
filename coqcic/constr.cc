@@ -647,6 +647,77 @@ apply_repr::shift(std::size_t limit, int dir) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// cast_repr
+
+cast_repr::~cast_repr()
+{
+}
+
+cast_repr::cast_repr(constr term, kind_type kind, constr typeterm)
+	: term_(std::move(term)), kind_(kind), typeterm_(std::move(typeterm))
+{
+}
+
+void
+cast_repr::format(std::string& out) const
+{
+	out += "Cast(";
+	term_.format(out);
+	out += ",";
+	switch (kind_) {
+		case vm_cast: {
+			out += "VMcast";
+			break;
+		}
+		case default_cast: {
+			out += "DEFAULTcast";
+			break;
+		}
+		case revert_cast: {
+			out += "REVERTcast";
+			break;
+		}
+		case native_cast: {
+			out += "NATIVEcast";
+			break;
+		}
+	}
+	out += ",";
+	typeterm_.format(out);
+	out += ")";
+}
+
+bool
+cast_repr::operator==(const constr_repr& other) const noexcept
+{
+	if (this == &other) {
+		return true;
+	} else if (auto other_cast = dynamic_cast<const cast_repr*>(&other)) {
+		return term_ == other_cast->term_ && kind_ == other_cast->kind_ && typeterm_ == other_cast->typeterm_;
+	} else {
+		return false;
+	}
+}
+
+constr
+cast_repr::check(const type_context& ctx) const
+{
+	return term_.check(ctx);
+}
+
+constr
+cast_repr::shift(std::size_t limit, int dir) const
+{
+	auto term = term_.shift(limit, dir);
+	auto typeterm = typeterm_.shift(limit, dir);
+	if (term.repr() != term_.repr() || typeterm.repr() != typeterm_.repr()) {
+		return constr(std::make_shared<cast_repr>(std::move(term), kind_, std::move(typeterm)));
+	} else {
+		return constr(shared_from_this());
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // case_repr
 
 case_repr::~case_repr()
@@ -872,6 +943,13 @@ apply(constr fn, std::vector<constr> args)
 {
 	return constr(std::make_shared<apply_repr>(std::move(fn), std::move(args)));
 }
+
+constr
+cast(constr term, cast_repr::kind_type kind, constr typeterm)
+{
+	return constr(std::make_shared<cast_repr>(std::move(term), kind, std::move(typeterm)));
+}
+
 
 constr
 case_match(constr restype, constr arg, std::vector<case_repr::branch> branches)

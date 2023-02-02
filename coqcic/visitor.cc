@@ -62,6 +62,12 @@ transform_visitor::handle_apply(const constr& fn, const std::vector<constr>& arg
 }
 
 std::optional<constr>
+transform_visitor::handle_cast(const constr& term, const cast_repr::kind_type kind, const constr& typeterm)
+{
+	return {};
+}
+
+std::optional<constr>
 transform_visitor::handle_case(const constr& argtype, const constr& restype, const std::vector<case_repr::branch>& branches)
 {
 	return {};
@@ -177,6 +183,21 @@ visit_transform(
 			return result;
 		} else if (changed) {
 			return builder::apply(fn, std::move(args));
+		} else {
+			return {};
+		}
+	} else if (auto cast = input.as_cast()) {
+		auto maybe_term = visit_transform(cast->term(), visitor);
+		const auto& term = maybe_term ? *maybe_term : cast->term();
+
+		auto maybe_typeterm = visit_transform(cast->typeterm(), visitor);
+		const auto& typeterm = maybe_typeterm ? *maybe_typeterm : cast->typeterm();
+
+		auto result = visitor.handle_cast(term, cast->kind(), typeterm);
+		if (result) {
+			return result;
+		} else if (maybe_term || maybe_typeterm) {
+			return builder::cast(term, cast->kind(), typeterm);
 		} else {
 			return {};
 		}

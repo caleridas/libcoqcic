@@ -302,6 +302,35 @@ constr_from_sexpr(const sexpr& e)
 				app_args.push_back(arg.move_value());
 			}
 			return builder::apply(fn.move_value(), std::move(app_args));
+		} else if (kind == "Cast") {
+			if (args.size() != 3) {
+				return from_sexpr_error {"Cast requires 3 arguments", &e};
+			}
+			auto term = constr_from_sexpr(args[0]);
+			auto kind = string_from_sexpr(args[1]);
+			auto typeterm = constr_from_sexpr(args[2]);
+			if (!term) {
+				return term.error();
+			}
+			if (!kind) {
+				return kind.error();
+			}
+			if (!typeterm) {
+				return typeterm.error();
+			}
+			cast_repr::kind_type kind_enum;
+			if (kind.value() == "VMcast") {
+				kind_enum = cast_repr::vm_cast;
+			} else if (kind.value() == "DEFAULTcast") {
+				kind_enum = cast_repr::default_cast;
+			} else if (kind.value() == "REVERTcast") {
+				kind_enum = cast_repr::revert_cast;
+			} else if (kind.value() == "NATIVEcast") {
+				kind_enum = cast_repr::native_cast;
+			} else {
+				return from_sexpr_error {"Unknown kind of cast", &e};
+			}
+			return builder::cast(term.move_value(), kind_enum, typeterm.move_value());
 		} else if (kind == "Case") {
 			if (args.size() != 4) {
 				return from_sexpr_error {"Case requires at exactly 4 arguments", &e};
@@ -344,7 +373,7 @@ constr_from_sexpr(const sexpr& e)
 
 			return builder::fix(index.move_value(), std::make_shared<fix_group>(fix_group{std::move(fns)}));
 		} else {
-			return from_sexpr_error {"Unhandled kind of constr", &e};
+			return from_sexpr_error {"Unhandled kind of constr:" + kind, &e};
 		}
 	} else {
 		return from_sexpr_error {"Cannot parse terminal into constr", &e};

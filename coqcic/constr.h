@@ -21,6 +21,7 @@ class product_repr;
 class lambda_repr;
 class let_repr;
 class apply_repr;
+class cast_repr;
 class case_repr;
 class fix_repr;
 
@@ -91,6 +92,7 @@ public:
 	inline const lambda_repr* as_lambda() const noexcept;
 	inline const let_repr* as_let() const noexcept;
 	inline const apply_repr* as_apply() const noexcept;
+	inline const cast_repr* as_cast() const noexcept;
 	inline const case_repr* as_case() const noexcept;
 	inline const fix_repr* as_fix() const noexcept;
 
@@ -403,6 +405,49 @@ private:
 	std::vector<constr> args_;
 };
 
+class cast_repr final : public constr_repr {
+public:
+	enum kind_type {
+		vm_cast,
+		default_cast,
+		revert_cast,
+		native_cast
+	};
+
+	~cast_repr() override;
+
+	cast_repr(constr term, kind_type kind, constr typeterm);
+
+	void
+	format(std::string& out) const override;
+
+	bool
+	operator==(const constr_repr& other) const noexcept override;
+
+	constr
+	check(const type_context& ctx) const override;
+
+	constr
+	shift(std::size_t limit, int dir) const override;
+
+	inline
+	const constr&
+	term() const noexcept { return term_; }
+
+	inline
+	kind_type
+	kind() const noexcept { return kind_; }
+
+	inline
+	const constr&
+	typeterm() const noexcept { return typeterm_; }
+
+private:
+	constr term_;
+	kind_type kind_;
+	constr typeterm_;
+};
+
 class case_repr final : public constr_repr {
 public:
 	struct branch {
@@ -525,6 +570,7 @@ const product_repr* constr::as_product() const noexcept { return dynamic_cast<co
 const lambda_repr* constr::as_lambda() const noexcept { return dynamic_cast<const lambda_repr*>(repr_.get()); }
 const let_repr* constr::as_let() const noexcept { return dynamic_cast<const let_repr*>(repr_.get()); }
 const apply_repr* constr::as_apply() const noexcept { return dynamic_cast<const apply_repr*>(repr_.get()); }
+const cast_repr* constr::as_cast() const noexcept { return dynamic_cast<const cast_repr*>(repr_.get()); }
 const case_repr* constr::as_case() const noexcept { return dynamic_cast<const case_repr*>(repr_.get()); }
 const fix_repr* constr::as_fix() const noexcept { return dynamic_cast<const fix_repr*>(repr_.get()); }
 
@@ -546,6 +592,8 @@ constr::visit(Visitor&& vis)
 		return vis(*let);
 	} else if (auto apply = as_apply()) {
 		return vis(*apply);
+	} else if (auto cast = as_cast()) {
+		return vis(*cast);
 	} else if (auto match_case = as_case()) {
 		return vis(*match_case);
 	} else if (auto fix = as_fix()) {
@@ -674,6 +722,9 @@ let(std::optional<std::string> varname, constr value, constr body);
 
 constr
 apply(constr fn, std::vector<constr> arg);
+
+constr
+cast(constr term, cast_repr::kind_type kind, constr typeterm);
 
 constr
 case_match(constr restype, constr arg, std::vector<case_repr::branch> branches);

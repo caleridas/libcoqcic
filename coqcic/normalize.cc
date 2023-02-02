@@ -112,6 +112,18 @@ normalize_rec(const constr& input)
 		} else {
 			return {};
 		}
+	} else if (auto cast = input.as_cast()) {
+		auto maybe_term = normalize_rec(cast->term());
+		const auto& term = maybe_term ? *maybe_term : cast->term();
+
+		auto maybe_typeterm = normalize_rec(cast->typeterm());
+		const auto& typeterm = maybe_typeterm ? *maybe_typeterm : cast->typeterm();
+
+		if (maybe_term || maybe_typeterm) {
+			return builder::cast(term, cast->kind(), typeterm);
+		} else {
+			return {};
+		}
 	} else if (auto match_case = input.as_case()) {
 		auto maybe_arg = normalize_rec(match_case->arg());
 		const auto& arg = maybe_arg ? *maybe_arg : match_case->arg();
