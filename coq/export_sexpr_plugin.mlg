@@ -35,7 +35,7 @@ let build_rel_sexpr (env : env) (index : int) : string =
       | Name id ->
         build_sexpr "Local" [Id.to_string id ; string_of_int index]
       | Anonymous ->
-        raise Not_found
+        build_sexpr "Local" ["_" ; string_of_int index]
   with Not_found ->
     build_sexpr "Rel" [string_of_int index]
 
