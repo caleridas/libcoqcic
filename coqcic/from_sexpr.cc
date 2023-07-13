@@ -1,5 +1,7 @@
 #include "coqcic/from_sexpr.h"
 
+#include "coqcic/parse_sexpr.h"
+
 namespace coqcic {
 
 namespace {
@@ -771,6 +773,44 @@ sfb_from_sexpr(const sexpr& e)
 {
 	std::shared_ptr<const fix_group> tmp;
 	return sfb_from_sexpr(e, tmp);
+}
+
+from_sexpr_str_result<constr>
+constr_from_sexpr_str(const std::string& str)
+{
+	auto e = parse_sexpr(str);
+	if (!e) {
+		return from_sexpr_str_error {e.error().description, e.error().location};
+	}
+
+	auto c = constr_from_sexpr(e.value());
+	if (!c) {
+		return from_sexpr_str_error {
+			c.error().description,
+			c.error().context ? c.error().context->location() : 0
+		};
+	}
+
+	return c.move_value();
+}
+
+from_sexpr_str_result<sfb>
+sfb_from_sexpr_str(const std::string& str)
+{
+	auto e = parse_sexpr(str);
+	if (!e) {
+		return from_sexpr_str_error {e.error().description, e.error().location};
+	}
+
+	auto s = sfb_from_sexpr(e.value());
+	if (!s) {
+		return from_sexpr_str_error {
+			s.error().description,
+			s.error().context ? s.error().context->location() : 0
+		};
+	}
+
+	return s.move_value();
 }
 
 }  // namespace coqcic

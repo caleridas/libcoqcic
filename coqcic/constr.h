@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -98,7 +99,7 @@ public:
 
 	template<typename Visitor>
 	inline auto
-	visit(Visitor&& vis);
+	visit(Visitor&& vis) const;
 
 private:
 	std::shared_ptr<const constr_repr> repr_;
@@ -576,7 +577,7 @@ const fix_repr* constr::as_fix() const noexcept { return dynamic_cast<const fix_
 
 template<typename Visitor>
 inline auto
-constr::visit(Visitor&& vis)
+constr::visit(Visitor&& vis) const
 {
 	if (auto local = as_local()) {
 		return vis(*local);

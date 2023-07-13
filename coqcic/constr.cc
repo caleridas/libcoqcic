@@ -494,9 +494,9 @@ let_repr::format(std::string& out) const
 	} else {
 		out += "_";
 	}
-	out+= " = ";
+	out+= " := ";
 	value_.format(out);
-	out += " in ";
+	out += " in (";
 	body_.format(out);
 	out += ')';
 }

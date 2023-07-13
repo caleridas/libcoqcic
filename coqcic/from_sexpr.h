@@ -15,13 +15,26 @@ struct from_sexpr_error {
 	const sexpr* context;
 };
 
+struct from_sexpr_str_error {
+	std::string description;
+	std::size_t location;
+};
+
 template<typename ResultType> using from_sexpr_result = parse_result<ResultType, from_sexpr_error>;
+template<typename ResultType> using from_sexpr_str_result = parse_result<ResultType, from_sexpr_str_error>;
 
 from_sexpr_result<constr>
 constr_from_sexpr(const sexpr& e);
 
 from_sexpr_result<sfb>
 sfb_from_sexpr(const sexpr& e);
+
+from_sexpr_str_result<constr>
+constr_from_sexpr_str(const std::string& s);
+
+from_sexpr_str_result<sfb>
+sfb_from_sexpr_str(const std::string& s);
+
 
 }  // namespace coqcic
 
