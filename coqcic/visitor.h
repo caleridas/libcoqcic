@@ -23,7 +23,7 @@ public:
 	pop_local();
 
 	// Handler functions for constr_t kinds, called in bottom-up order (children
-	// first). Each function can return a substitute for its input constr_t.
+	// first). Each function can return a substitute for its input constr.
 	// (It can also return none in which case the input is left untransformed).
 
 	virtual
