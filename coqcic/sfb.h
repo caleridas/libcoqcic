@@ -83,6 +83,50 @@ private:
 	std::shared_ptr<const sfb_base> repr_;
 };
 
+struct constructor_t {
+	std::string id;
+	constr type;
+
+	inline bool
+	operator==(const constructor_t& other) const noexcept
+	{
+		return id == other.id && type == other.type;
+	}
+
+	inline bool
+	operator!=(const constructor_t& other) const noexcept
+	{
+		return !(*this == other);
+	}
+};
+
+struct one_inductive_t {
+	std::string id;
+	constr type;
+	std::vector<constructor_t> constructors;
+
+	inline
+	one_inductive_t(
+		std::string init_id,
+		constr init_type,
+		std::vector<constructor_t> init_constructors) noexcept
+		: id(std::move(init_id)), type(std::move(init_type)), constructors(std::move(init_constructors))
+	{
+	}
+
+	inline bool
+	operator==(const one_inductive_t& other) const noexcept
+	{
+		return id == other.id && type == other.type && constructors == other.constructors;
+	}
+
+	inline bool
+	operator!=(const one_inductive_t& other) const noexcept
+	{
+		return !(*this == other);
+	}
+};
+
 class sfb_base : public std::enable_shared_from_this<sfb_base> {
 public:
 	virtual
@@ -173,56 +217,12 @@ private:
 	constr type_;
 };
 
-struct one_inductive {
-	struct constructor {
-		std::string id;
-		constr type;
-
-		inline bool
-		operator==(const constructor& other) const noexcept
-		{
-			return id == other.id && type == other.type;
-		}
-
-		inline bool
-		operator!=(const constructor& other) const noexcept
-		{
-			return !(*this == other);
-		}
-	};
-
-	std::string id;
-	constr type;
-	std::vector<constructor> constructors;
-
-	inline
-	one_inductive(
-		std::string init_id,
-		constr init_type,
-		std::vector<constructor> init_constructors) noexcept
-		: id(std::move(init_id)), type(std::move(init_type)), constructors(std::move(init_constructors))
-	{
-	}
-
-	inline bool
-	operator==(const one_inductive& other) const noexcept
-	{
-		return id == other.id && type == other.type && constructors == other.constructors;
-	}
-
-	inline bool
-	operator!=(const one_inductive& other) const noexcept
-	{
-		return !(*this == other);
-	}
-};
-
 class sfb_inductive final : public sfb_base {
 public:
 	~sfb_inductive() override;
 
 	inline
-	sfb_inductive(std::vector<one_inductive> one_inductives) noexcept
+	sfb_inductive(std::vector<one_inductive_t> one_inductives) noexcept
 		: one_inductives_(std::move(one_inductives))
 	{
 	}
@@ -233,14 +233,14 @@ public:
 	bool
 	operator==(const sfb_base& other) const noexcept override;
 
-	inline const std::vector<one_inductive>&
+	inline const std::vector<one_inductive_t>&
 	one_inductives() const noexcept
 	{
 		return one_inductives_;
 	}
 
 private:
-	std::vector<one_inductive> one_inductives_;
+	std::vector<one_inductive_t> one_inductives_;
 };
 
 // Algorithmic module expression: A module name,  possibly with arguments
@@ -507,7 +507,7 @@ sfb
 axiom(std::string id, constr type);
 
 sfb
-inductive(std::vector<one_inductive> one_inductives);
+inductive(std::vector<one_inductive_t> one_inductives);
 
 sfb
 module_def(std::string id, module_body body);

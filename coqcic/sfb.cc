@@ -300,7 +300,7 @@ axiom(std::string id, constr type)
 }
 
 sfb
-inductive(std::vector<one_inductive> one_inductives)
+inductive(std::vector<one_inductive_t> one_inductives)
 {
 	return sfb(std::make_shared<sfb_inductive>(std::move(one_inductives)));
 }

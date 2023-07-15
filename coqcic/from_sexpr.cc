@@ -382,7 +382,7 @@ constr_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<one_inductive::constructor>
+from_sexpr_result<constructor_t>
 constructor_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
@@ -403,7 +403,7 @@ constructor_from_sexpr(const sexpr& e)
 				return type.error();
 			}
 
-			return one_inductive::constructor { id.move_value(), type.move_value() };
+			return constructor_t { id.move_value(), type.move_value() };
 		} else {
 			return from_sexpr_error {"Unhandled kind of constructor", &e};
 		}
@@ -412,7 +412,7 @@ constructor_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<one_inductive>
+from_sexpr_result<one_inductive_t>
 one_inductive_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
@@ -432,7 +432,7 @@ one_inductive_from_sexpr(const sexpr& e)
 			if (!type) {
 				return type.error();
 			}
-			std::vector<one_inductive::constructor> constructors;
+			std::vector<constructor_t> constructors;
 			for (std::size_t n = 2; n < args.size(); ++n) {
 				const auto& arg = args[n];
 				auto cons = constructor_from_sexpr(arg);
@@ -442,7 +442,7 @@ one_inductive_from_sexpr(const sexpr& e)
 				constructors.push_back(cons.move_value());
 			}
 
-			return one_inductive(id.move_value(), type.move_value(), std::move(constructors));
+			return one_inductive_t(id.move_value(), type.move_value(), std::move(constructors));
 		} else {
 			return from_sexpr_error {"Unhandled kind of sfb", &e};
 		}
@@ -713,7 +713,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix)
 				return from_sexpr_error {"Requires at least one inductive definition", &e};
 			}
 
-			std::vector<one_inductive> inds;
+			std::vector<one_inductive_t> inds;
 			for (const auto& arg : args) {
 				auto ind = one_inductive_from_sexpr(arg);
 				if (!ind) {
