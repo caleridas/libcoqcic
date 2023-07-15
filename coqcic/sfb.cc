@@ -6,19 +6,19 @@ namespace coqcic {
 // sfb
 
 void
-sfb::format(std::string& out) const
+sfb_t::format(std::string& out) const
 {
 	repr_->format(out);
 }
 
 bool
-sfb::operator==(const sfb& other) const noexcept
+sfb_t::operator==(const sfb_t& other) const noexcept
 {
 	return repr_ == other.repr_ || (*repr_ == *other.repr_);
 }
 
 std::string
-sfb::debug_string() const
+sfb_t::debug_string() const
 {
 	std::string s;
 	format(s);
@@ -287,34 +287,34 @@ sfb_module_type::operator==(const sfb_base& other) const noexcept
 
 namespace builder {
 
-sfb
+sfb_t
 definition(std::string id, constr_t type, constr_t value)
 {
-	return sfb(std::make_shared<sfb_definition>(std::move(id), std::move(type), std::move(value)));
+	return sfb_t(std::make_shared<sfb_definition>(std::move(id), std::move(type), std::move(value)));
 }
 
-sfb
+sfb_t
 axiom(std::string id, constr_t type)
 {
-	return sfb(std::make_shared<sfb_axiom>(std::move(id), std::move(type)));
+	return sfb_t(std::make_shared<sfb_axiom>(std::move(id), std::move(type)));
 }
 
-sfb
+sfb_t
 inductive(std::vector<one_inductive_t> one_inductives)
 {
-	return sfb(std::make_shared<sfb_inductive>(std::move(one_inductives)));
+	return sfb_t(std::make_shared<sfb_inductive>(std::move(one_inductives)));
 }
 
-sfb
+sfb_t
 module_def(std::string id, module_body body)
 {
-	return sfb(std::make_shared<sfb_module>(std::move(id), std::move(body)));
+	return sfb_t(std::make_shared<sfb_module>(std::move(id), std::move(body)));
 }
 
-sfb
+sfb_t
 module_type_def(std::string id, module_body body)
 {
-	return sfb(std::make_shared<sfb_module_type>(std::move(id), std::move(body)));
+	return sfb_t(std::make_shared<sfb_module_type>(std::move(id), std::move(body)));
 }
 
 }  // builder

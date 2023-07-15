@@ -188,7 +188,7 @@ fixfunction_from_sexpr(const sexpr& e)
 
 }  // namespace
 
-from_sexpr_result<sfb>
+from_sexpr_result<sfb_t>
 sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix);
 
 from_sexpr_result<constr_t>
@@ -532,7 +532,7 @@ namespace {
 using mod_functor_args_t = std::vector<std::pair<std::string, modexpr>>;
 }  // namespace
 
-from_sexpr_result<std::pair<mod_functor_args_t, std::vector<sfb>>>
+from_sexpr_result<std::pair<mod_functor_args_t, std::vector<sfb_t>>>
 modsig_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
@@ -541,7 +541,7 @@ modsig_from_sexpr(const sexpr& e)
 
 		if (kind == "Body") {
 			std::shared_ptr<const fix_group_t> last_fix;
-			std::pair<mod_functor_args_t, std::vector<sfb>> result;
+			std::pair<mod_functor_args_t, std::vector<sfb_t>> result;
 			for (const auto& arg : args) {
 				auto sfb = sfb_from_sexpr(arg, last_fix);
 				if (!sfb) {
@@ -552,7 +552,7 @@ modsig_from_sexpr(const sexpr& e)
 
 			return {std::move(result)};
 		} else if (kind == "Functor") {
-			std::pair<mod_functor_args_t, std::vector<sfb>> result;
+			std::pair<mod_functor_args_t, std::vector<sfb_t>> result;
 			auto name = string_from_sexpr(args[0]);
 			auto type = functored_modexpr_from_sexpr(args[1]);
 			auto inner = modsig_from_sexpr(args[2]);
@@ -639,7 +639,7 @@ module_body_from_sexpr(const sexpr& e)
 			}
 
 			std::vector<std::pair<std::string, modexpr>> parameters;
-			std::vector<sfb> sfbs;
+			std::vector<sfb_t> sfbs;
 			std::tie(parameters, sfbs) = modsig.move_value();
 			std::reverse(parameters.begin(), parameters.end());
 
@@ -652,7 +652,7 @@ module_body_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<sfb>
+from_sexpr_result<sfb_t>
 sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix)
 {
 	if (auto c = e.as_compound()) {
@@ -753,7 +753,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix)
 			}
 
 			std::vector<std::pair<std::string, modexpr>> parameters;
-			std::vector<sfb> sfbs;
+			std::vector<sfb_t> sfbs;
 			std::tie(parameters, sfbs) = modsig.move_value();
 			std::reverse(parameters.begin(), parameters.end());
 
@@ -768,7 +768,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix)
 	}
 }
 
-from_sexpr_result<sfb>
+from_sexpr_result<sfb_t>
 sfb_from_sexpr(const sexpr& e)
 {
 	std::shared_ptr<const fix_group_t> tmp;
@@ -794,7 +794,7 @@ constr_from_sexpr_str(const std::string& str)
 	return c.move_value();
 }
 
-from_sexpr_str_result<sfb>
+from_sexpr_str_result<sfb_t>
 sfb_from_sexpr_str(const std::string& str)
 {
 	auto e = parse_sexpr(str);

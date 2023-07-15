@@ -26,13 +26,13 @@ template<typename ResultType> using from_sexpr_str_result = parse_result<ResultT
 from_sexpr_result<constr_t>
 constr_from_sexpr(const sexpr& e);
 
-from_sexpr_result<sfb>
+from_sexpr_result<sfb_t>
 sfb_from_sexpr(const sexpr& e);
 
 from_sexpr_str_result<constr_t>
 constr_from_sexpr_str(const std::string& s);
 
-from_sexpr_str_result<sfb>
+from_sexpr_str_result<sfb_t>
 sfb_from_sexpr_str(const std::string& s);
 
 
