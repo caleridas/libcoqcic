@@ -9,8 +9,8 @@ transform_visitor::~transform_visitor()
 void
 transform_visitor::push_local(
 	const std::string* name,
-	const constr* type,
-	const constr* value)
+	const constr_t* type,
+	const constr_t* value)
 {
 }
 
@@ -19,69 +19,69 @@ transform_visitor::pop_local()
 {
 }
 
-std::optional<constr>
+std::optional<constr_t>
 transform_visitor::handle_local(const std::string& name, std::size_t index)
 {
 	return {};
 }
 
-std::optional<constr>
+std::optional<constr_t>
 transform_visitor::handle_global(const std::string& name)
 {
 	return {};
 }
 
-std::optional<constr>
+std::optional<constr_t>
 transform_visitor::handle_builtin(const std::string& name)
 {
 	return {};
 }
 
-std::optional<constr>
-transform_visitor::handle_product(const std::vector<formal_arg_t>& args, const constr& restype)
+std::optional<constr_t>
+transform_visitor::handle_product(const std::vector<formal_arg_t>& args, const constr_t& restype)
 {
 	return {};
 }
 
-std::optional<constr>
-transform_visitor::handle_lambda(const std::vector<formal_arg_t>& args, const constr& body)
+std::optional<constr_t>
+transform_visitor::handle_lambda(const std::vector<formal_arg_t>& args, const constr_t& body)
 {
 	return {};
 }
 
-std::optional<constr>
-transform_visitor::handle_let(const std::optional<std::string>& varname, const constr& value, const constr& body)
+std::optional<constr_t>
+transform_visitor::handle_let(const std::optional<std::string>& varname, const constr_t& value, const constr_t& body)
 {
 	return {};
 }
 
-std::optional<constr>
-transform_visitor::handle_apply(const constr& fn, const std::vector<constr>& args)
+std::optional<constr_t>
+transform_visitor::handle_apply(const constr_t& fn, const std::vector<constr_t>& args)
 {
 	return {};
 }
 
-std::optional<constr>
-transform_visitor::handle_cast(const constr& term, const constr_cast::kind_type kind, const constr& typeterm)
+std::optional<constr_t>
+transform_visitor::handle_cast(const constr_t& term, const constr_cast::kind_type kind, const constr_t& typeterm)
 {
 	return {};
 }
 
-std::optional<constr>
-transform_visitor::handle_case(const constr& argtype, const constr& restype, const std::vector<match_branch_t>& branches)
+std::optional<constr_t>
+transform_visitor::handle_case(const constr_t& argtype, const constr_t& restype, const std::vector<match_branch_t>& branches)
 {
 	return {};
 }
 
-std::optional<constr>
+std::optional<constr_t>
 transform_visitor::handle_fix(std::size_t index, const std::shared_ptr<const fix_group_t>& group)
 {
 	return {};
 }
 
-std::optional<constr>
+std::optional<constr_t>
 visit_transform(
-	const constr& input,
+	const constr_t& input,
 	transform_visitor& visitor)
 {
 	if (auto local = input.as_local()) {
@@ -171,7 +171,7 @@ visit_transform(
 		bool changed = !!maybe_fn;
 		const auto& fn = maybe_fn ? *maybe_fn : apply->fn();
 
-		std::vector<constr> args;
+		std::vector<constr_t> args;
 		for (const auto& arg : apply->args()) {
 			auto maybe_arg = visit_transform(arg, visitor);
 			changed = changed || maybe_arg;

@@ -50,7 +50,7 @@ string_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<constr>
+from_sexpr_result<constr_t>
 match_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
@@ -191,7 +191,7 @@ fixfunction_from_sexpr(const sexpr& e)
 from_sexpr_result<sfb>
 sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix);
 
-from_sexpr_result<constr>
+from_sexpr_result<constr_t>
 constr_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
@@ -295,7 +295,7 @@ constr_from_sexpr(const sexpr& e)
 			if (!fn) {
 				return fn.error();
 			}
-			std::vector<constr> app_args;
+			std::vector<constr_t> app_args;
 			for (std::size_t n = 1; n < args.size(); ++n) {
 				auto arg = constr_from_sexpr(args[n]);
 				if (!arg) {
@@ -775,7 +775,7 @@ sfb_from_sexpr(const sexpr& e)
 	return sfb_from_sexpr(e, tmp);
 }
 
-from_sexpr_str_result<constr>
+from_sexpr_str_result<constr_t>
 constr_from_sexpr_str(const std::string& str)
 {
 	auto e = parse_sexpr(str);

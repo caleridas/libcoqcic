@@ -9,8 +9,8 @@ namespace coqcic {
 // - "apply-of-apply" will be flattened into a single apply
 // - "product-of-product" will be flattened into a single product
 // - "lambda-of-lambda" will be flattened into a single lambda
-constr
-normalize(const constr& expr);
+constr_t
+normalize(const constr_t& expr);
 
 }  // namespace coqcic
 

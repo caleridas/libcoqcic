@@ -85,7 +85,7 @@ private:
 
 struct constructor_t {
 	std::string id;
-	constr type;
+	constr_t type;
 
 	inline bool
 	operator==(const constructor_t& other) const noexcept
@@ -102,13 +102,13 @@ struct constructor_t {
 
 struct one_inductive_t {
 	std::string id;
-	constr type;
+	constr_t type;
 	std::vector<constructor_t> constructors;
 
 	inline
 	one_inductive_t(
 		std::string init_id,
-		constr init_type,
+		constr_t init_type,
 		std::vector<constructor_t> init_constructors) noexcept
 		: id(std::move(init_id)), type(std::move(init_type)), constructors(std::move(init_constructors))
 	{
@@ -149,7 +149,7 @@ public:
 	~sfb_definition() override;
 
 	inline
-	sfb_definition(std::string id, constr type, constr value) noexcept
+	sfb_definition(std::string id, constr_t type, constr_t value) noexcept
 		: id_(std::move(id)), type_(std::move(type)), value_(std::move(value))
 	{
 	}
@@ -166,13 +166,13 @@ public:
 		return id_;
 	}
 
-	inline const constr&
+	inline const constr_t&
 	type() const noexcept
 	{
 		return type_;
 	}
 
-	inline const constr&
+	inline const constr_t&
 	value() const noexcept
 	{
 		return value_;
@@ -180,8 +180,8 @@ public:
 
 private:
 	std::string id_;
-	constr type_;
-	constr value_;
+	constr_t type_;
+	constr_t value_;
 };
 
 class sfb_axiom final : public sfb_base {
@@ -189,7 +189,7 @@ public:
 	~sfb_axiom() override;
 
 	inline
-	sfb_axiom(std::string id, constr type) noexcept
+	sfb_axiom(std::string id, constr_t type) noexcept
 		: id_(std::move(id)), type_(std::move(type))
 	{
 	}
@@ -206,7 +206,7 @@ public:
 		return id_;
 	}
 
-	inline const constr&
+	inline const constr_t&
 	type() const noexcept
 	{
 		return type_;
@@ -214,7 +214,7 @@ public:
 
 private:
 	std::string id_;
-	constr type_;
+	constr_t type_;
 };
 
 class sfb_inductive final : public sfb_base {
@@ -501,10 +501,10 @@ sfb::visit(Visitor&& vis)
 namespace builder {
 
 sfb
-definition(std::string id, constr type, constr value);
+definition(std::string id, constr_t type, constr_t value);
 
 sfb
-axiom(std::string id, constr type);
+axiom(std::string id, constr_t type);
 
 sfb
 inductive(std::vector<one_inductive_t> one_inductives);

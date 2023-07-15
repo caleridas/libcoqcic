@@ -28,7 +28,7 @@ fix_group_t
 apply_fix_specialization(
 	const fix_group_t& group,
 	const fix_spec_info& info,
-	const std::vector<constr>& spec_args,
+	const std::vector<constr_t>& spec_args,
 	const std::function<std::string(std::size_t)>& namegen);
 
 }  // namespace coqcic

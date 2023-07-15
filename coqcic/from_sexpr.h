@@ -23,13 +23,13 @@ struct from_sexpr_str_error {
 template<typename ResultType> using from_sexpr_result = parse_result<ResultType, from_sexpr_error>;
 template<typename ResultType> using from_sexpr_str_result = parse_result<ResultType, from_sexpr_str_error>;
 
-from_sexpr_result<constr>
+from_sexpr_result<constr_t>
 constr_from_sexpr(const sexpr& e);
 
 from_sexpr_result<sfb>
 sfb_from_sexpr(const sexpr& e);
 
-from_sexpr_str_result<constr>
+from_sexpr_str_result<constr_t>
 constr_from_sexpr_str(const std::string& s);
 
 from_sexpr_str_result<sfb>

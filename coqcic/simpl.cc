@@ -13,7 +13,7 @@ public:
 	local_subst_visitor(
 		std::size_t depth,
 		std::size_t index,
-		std::vector<constr> subst)
+		std::vector<constr_t> subst)
 		: depth_(depth), index_(index), subst_(std::move(subst))
 	{
 	}
@@ -21,8 +21,8 @@ public:
 	void
 	push_local(
 		const std::string* name,
-		const constr* type,
-		const constr* value) override
+		const constr_t* type,
+		const constr_t* value) override
 	{
 		++depth_;
 	}
@@ -33,7 +33,7 @@ public:
 		--depth_;
 	}
 
-	std::optional<constr>
+	std::optional<constr_t>
 	handle_local(const std::string& name, std::size_t index) override
 	{
 		if (index >= index_ + subst_.size() + depth_) {
@@ -48,16 +48,16 @@ public:
 private:
 	std::size_t depth_;
 	std::size_t index_;
-	std::vector<constr> subst_;
+	std::vector<constr_t> subst_;
 };
 
 }  // namespace
 
-constr
+constr_t
 local_subst(
-	const constr& input,
+	const constr_t& input,
 	std::size_t index,
-	std::vector<constr> subst)
+	std::vector<constr_t> subst)
 {
 	local_subst_visitor visitor(0, index, std::move(subst));
 	auto result = visit_transform(input, visitor);

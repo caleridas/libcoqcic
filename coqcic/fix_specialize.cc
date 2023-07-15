@@ -97,7 +97,7 @@ fix_closure_state::add_call_state(
 
 sym
 visit_for_fix_closure_state(
-	const constr& c,
+	const constr_t& c,
 	fix_closure_state& state,
 	const sym_stack& locals,
 	const sym_stack& apply_args)
@@ -265,7 +265,7 @@ struct replace_shift {
 };
 
 struct replace_subst {
-	constr subst;
+	constr_t subst;
 };
 
 using replace = std::variant<replace_shift, replace_subst>;
@@ -288,8 +288,8 @@ public:
 	void
 	push_local(
 		const std::string* name,
-		const constr* type,
-		const constr* value)
+		const constr_t* type,
+		const constr_t* value)
 	{
 		locals_ = locals_.push(replace_shift{extra_shift_});
 		++depth_;
@@ -302,7 +302,7 @@ public:
 		--depth_;
 	}
 
-	std::optional<constr>
+	std::optional<constr_t>
 	handle_local(const std::string& name, std::size_t index) override
 	{
 		if (index >= locals_.size()) {
@@ -319,8 +319,8 @@ public:
 		}
 	}
 
-	std::optional<constr>
-	handle_apply(const constr& fn, const std::vector<constr>& args) override
+	std::optional<constr_t>
+	handle_apply(const constr_t& fn, const std::vector<constr_t>& args) override
 	{
 		if (auto lambda = fn.as_lambda()) {
 			(void) lambda;
@@ -343,7 +343,7 @@ fix_group_t
 apply_fix_specialization(
 	const fix_group_t& group,
 	const fix_spec_info& info,
-	const std::vector<constr>& spec_args,
+	const std::vector<constr_t>& spec_args,
 	const std::function<std::string(std::size_t)>& namegen)
 {
 	// Build the expressions for the replacement functions.
@@ -358,7 +358,7 @@ apply_fix_specialization(
 		}
 		// Build inner call expression, with specialized arguments removed.
 		auto expr = builder::local(namegen(fn_index), arg_count + group.functions.size() - fn_index);
-		std::vector<constr> args;
+		std::vector<constr_t> args;
 		for (std::size_t n = 0; n < fn.args.size(); ++n) {
 			if (!info.functions[fn_index].spec_args[n]) {
 				args.push_back(builder::local(fn.args[n].name ? *fn.args[n].name : "_", fn.args.size() - n -1));

@@ -32,26 +32,26 @@ class type_context_t;
 
 // A CIC constr, represented as one of the representation
 // classes above.
-class constr {
+class constr_t {
 public:
 	explicit
 	inline
-	constr(std::shared_ptr<const constr_base> repr) noexcept
+	constr_t(std::shared_ptr<const constr_base> repr) noexcept
 		: repr_(std::move(repr))
 	{
 	}
 
-	constr() noexcept = default;
+	constr_t() noexcept = default;
 
-	inline constr&
-	operator=(constr other) noexcept
+	inline constr_t&
+	operator=(constr_t other) noexcept
 	{
 		swap(other);
 		return *this;
 	}
 
 	inline void
-	swap(constr& other) noexcept
+	swap(constr_t& other) noexcept
 	{
 		repr_.swap(other.repr_);
 	}
@@ -60,18 +60,18 @@ public:
 	format(std::string& out) const;
 
 	bool
-	operator==(const constr& other) const;
+	operator==(const constr_t& other) const;
 
 	inline
-	bool operator!=(const constr& other) const { return ! (*this == other); }
+	bool operator!=(const constr_t& other) const { return ! (*this == other); }
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const;
 
-	constr
+	constr_t
 	simpl() const;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const;
 
 	std::string
@@ -112,7 +112,7 @@ private:
 // A formal argument to a function.
 struct formal_arg_t {
 	std::optional<std::string> name;
-	constr type;
+	constr_t type;
 
 	inline
 	bool
@@ -133,7 +133,7 @@ struct match_branch_t {
 	// Number of arguments matched.
 	std::size_t nargs;
 	// Lambda expression of the match.
-	constr expr;
+	constr_t expr;
 
 	inline bool
 	operator==(const match_branch_t& other) const noexcept
@@ -152,9 +152,9 @@ struct fix_function_t {
 	// Formal arguments of this function.
 	std::vector<formal_arg_t> args;
 	// Result type of this function (dependent on args).
-	constr restype;
+	constr_t restype;
 	// Body of this function (dependent on all functions in this bundle as well as the args).
-	constr body;
+	constr_t body;
 
 	inline bool
 	operator==(const fix_function_t& other) const noexcept
@@ -178,22 +178,22 @@ struct fix_group_t {
 // Collect the de Bruijn indices of all locals in this object that
 // are not resolvable within the construct itself.
 std::vector<std::size_t>
-collect_external_references(const constr& obj);
+collect_external_references(const constr_t& obj);
 
 // Context for type checking operation on constr objects.
 class type_context_t {
 public:
-	type_context_t push_local(std::string name, constr type) const;
+	type_context_t push_local(std::string name, constr_t type) const;
 
 	struct local_entry {
 		std::string name;
-		constr type;
+		constr_t type;
 	};
 
 	shared_stack<local_entry> locals;
 
 	// Map constr_global name to its type
-	std::function<constr(const std::string&)> global_types;
+	std::function<constr_t(const std::string&)> global_types;
 };
 
 class constr_base : public std::enable_shared_from_this<constr_base> {
@@ -210,15 +210,15 @@ public:
 	operator==(const constr_base& other) const noexcept = 0;
 
 	virtual
-	constr
+	constr_t
 	check(const type_context_t& ctx) const = 0;
 
 	virtual
-	constr
+	constr_t
 	simpl() const;
 
 	virtual
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const;
 
 	std::string
@@ -239,10 +239,10 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const override;
 
 	inline
@@ -272,7 +272,7 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
 	inline
@@ -289,7 +289,7 @@ public:
 
 	constr_builtin(
 		std::string name,
-		std::function<constr(const constr_base&)> check);
+		std::function<constr_t(const constr_base&)> check);
 
 	void
 	format(std::string& out) const override;
@@ -297,7 +297,7 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
 	inline
@@ -322,14 +322,14 @@ public:
 
 private:
 	std::string name_;
-	std::function<constr(const constr_base&)> check_;
+	std::function<constr_t(const constr_base&)> check_;
 };
 
 class constr_product final : public constr_base {
 public:
 	~constr_product() override;
 
-	constr_product(std::vector<formal_arg_t> args, constr restype);
+	constr_product(std::vector<formal_arg_t> args, constr_t restype);
 
 	void
 	format(std::string& out) const override;
@@ -337,10 +337,10 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const override;
 
 	inline
@@ -348,19 +348,19 @@ public:
 	args() const noexcept { return args_; }
 
 	inline
-	const constr&
+	const constr_t&
 	restype() const noexcept { return restype_; }
 
 private:
 	std::vector<formal_arg_t> args_;
-	constr restype_;
+	constr_t restype_;
 };
 
 class constr_lambda final : public constr_base {
 public:
 	~constr_lambda() override;
 
-	constr_lambda(std::vector<formal_arg_t> args, constr body);
+	constr_lambda(std::vector<formal_arg_t> args, constr_t body);
 
 	void
 	format(std::string& out) const override;
@@ -368,10 +368,10 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const override;
 
 	inline
@@ -379,13 +379,13 @@ public:
 	args() const noexcept { return args_; }
 
 	inline
-	const constr&
+	const constr_t&
 	body() const noexcept { return body_; }
 
 private:
 	std::vector<formal_arg_t> args_;
-	constr argtype_;
-	constr body_;
+	constr_t argtype_;
+	constr_t body_;
 };
 
 class constr_let final : public constr_base {
@@ -394,8 +394,8 @@ public:
 
 	constr_let(
 		std::optional<std::string> varname,
-		constr value,
-		constr body);
+		constr_t value,
+		constr_t body);
 
 	void
 	format(std::string& out) const override;
@@ -403,10 +403,10 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const override;
 
 	inline
@@ -414,24 +414,24 @@ public:
 	varname() const noexcept { return varname_; }
 
 	inline
-	const constr&
+	const constr_t&
 	value() const noexcept { return value_; }
 
 	inline
-	const constr&
+	const constr_t&
 	body() const noexcept { return body_; }
 
 private:
 	std::optional<std::string> varname_;
-	constr value_;
-	constr body_;
+	constr_t value_;
+	constr_t body_;
 };
 
 class constr_apply final : public constr_base {
 public:
 	~constr_apply() override;
 
-	constr_apply(constr fn, std::vector<constr> args);
+	constr_apply(constr_t fn, std::vector<constr_t> args);
 
 	void
 	format(std::string& out) const override;
@@ -439,26 +439,26 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
-	constr
+	constr_t
 	simpl() const override;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const override;
 
 	inline
-	const constr&
+	const constr_t&
 	fn() const noexcept { return fn_; }
 
 	inline
-	const std::vector<constr>&
+	const std::vector<constr_t>&
 	args() const noexcept { return args_; }
 
 private:
-	constr fn_;
-	std::vector<constr> args_;
+	constr_t fn_;
+	std::vector<constr_t> args_;
 };
 
 class constr_cast final : public constr_base {
@@ -472,7 +472,7 @@ public:
 
 	~constr_cast() override;
 
-	constr_cast(constr term, kind_type kind, constr typeterm);
+	constr_cast(constr_t term, kind_type kind, constr_t typeterm);
 
 	void
 	format(std::string& out) const override;
@@ -480,14 +480,14 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const override;
 
 	inline
-	const constr&
+	const constr_t&
 	term() const noexcept { return term_; }
 
 	inline
@@ -495,20 +495,20 @@ public:
 	kind() const noexcept { return kind_; }
 
 	inline
-	const constr&
+	const constr_t&
 	typeterm() const noexcept { return typeterm_; }
 
 private:
-	constr term_;
+	constr_t term_;
 	kind_type kind_;
-	constr typeterm_;
+	constr_t typeterm_;
 };
 
 class constr_match final : public constr_base {
 public:
 	~constr_match() override;
 
-	constr_match(constr restype, constr arg, std::vector<match_branch_t> branches);
+	constr_match(constr_t restype, constr_t arg, std::vector<match_branch_t> branches);
 
 	void
 	format(std::string& out) const override;
@@ -516,21 +516,21 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const override;
 
 	// The result type of the case expression. Note that this is an expression
 	// dependent on the argument type.
 	inline
-	const constr&
+	const constr_t&
 	restype() const noexcept { return restype_; }
 
 	// The actual argument of the case expression.
 	inline
-	const constr&
+	const constr_t&
 	arg() const noexcept { return arg_; }
 
 	// The branches of the expression. Each branch must be a lambda expression
@@ -542,8 +542,8 @@ public:
 	branches() const noexcept { return branches_; }
 
 private:
-	constr restype_;
-	constr arg_;
+	constr_t restype_;
+	constr_t arg_;
 	std::vector<match_branch_t> branches_;
 };
 
@@ -559,10 +559,10 @@ public:
 	bool
 	operator==(const constr_base& other) const noexcept override;
 
-	constr
+	constr_t
 	check(const type_context_t& ctx) const override;
 
-	constr
+	constr_t
 	shift(std::size_t limit, int dir) const override;
 
 	inline
@@ -579,22 +579,22 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// constr implementations
+// constr_t implementations
 
-const constr_local* constr::as_local() const noexcept { return dynamic_cast<const constr_local*>(repr_.get()); }
-const constr_global* constr::as_global() const noexcept { return dynamic_cast<const constr_global*>(repr_.get()); }
-const constr_builtin* constr::as_builtin() const noexcept { return dynamic_cast<const constr_builtin*>(repr_.get()); }
-const constr_product* constr::as_product() const noexcept { return dynamic_cast<const constr_product*>(repr_.get()); }
-const constr_lambda* constr::as_lambda() const noexcept { return dynamic_cast<const constr_lambda*>(repr_.get()); }
-const constr_let* constr::as_let() const noexcept { return dynamic_cast<const constr_let*>(repr_.get()); }
-const constr_apply* constr::as_apply() const noexcept { return dynamic_cast<const constr_apply*>(repr_.get()); }
-const constr_cast* constr::as_cast() const noexcept { return dynamic_cast<const constr_cast*>(repr_.get()); }
-const constr_match* constr::as_match() const noexcept { return dynamic_cast<const constr_match*>(repr_.get()); }
-const constr_fix* constr::as_fix() const noexcept { return dynamic_cast<const constr_fix*>(repr_.get()); }
+const constr_local* constr_t::as_local() const noexcept { return dynamic_cast<const constr_local*>(repr_.get()); }
+const constr_global* constr_t::as_global() const noexcept { return dynamic_cast<const constr_global*>(repr_.get()); }
+const constr_builtin* constr_t::as_builtin() const noexcept { return dynamic_cast<const constr_builtin*>(repr_.get()); }
+const constr_product* constr_t::as_product() const noexcept { return dynamic_cast<const constr_product*>(repr_.get()); }
+const constr_lambda* constr_t::as_lambda() const noexcept { return dynamic_cast<const constr_lambda*>(repr_.get()); }
+const constr_let* constr_t::as_let() const noexcept { return dynamic_cast<const constr_let*>(repr_.get()); }
+const constr_apply* constr_t::as_apply() const noexcept { return dynamic_cast<const constr_apply*>(repr_.get()); }
+const constr_cast* constr_t::as_cast() const noexcept { return dynamic_cast<const constr_cast*>(repr_.get()); }
+const constr_match* constr_t::as_match() const noexcept { return dynamic_cast<const constr_match*>(repr_.get()); }
+const constr_fix* constr_t::as_fix() const noexcept { return dynamic_cast<const constr_fix*>(repr_.get()); }
 
 template<typename Visitor>
 inline auto
-constr::visit(Visitor&& vis) const
+constr_t::visit(Visitor&& vis) const
 {
 	if (auto local = as_local()) {
 		return vis(*local);
@@ -628,26 +628,26 @@ class inductive;
 
 class constructor {
 public:
-	inline constructor(std::string name, constr type) noexcept
+	inline constructor(std::string name, constr_t type) noexcept
 		: name_(std::move(name)), index_(0), type_(std::move(type))
 	{
 	}
 
 	const std::string& name() const noexcept { return name_; }
-	const constr& type() const noexcept { return type_; }
+	const constr_t& type() const noexcept { return type_; }
 	const std::size_t index() const noexcept { return index_; }
 
 private:
 	std::string name_;
 	std::size_t index_;
-	constr type_;
+	constr_t type_;
 
 	friend class inductive;
 };
 
 class inductive {
 public:
-	inline inductive(std::string name, constr sig, std::size_t bound, std::vector<constructor> constructors) noexcept
+	inline inductive(std::string name, constr_t sig, std::size_t bound, std::vector<constructor> constructors) noexcept
 		: name_(std::move(name)), sig_(std::move(sig)), bound_(bound), constructors_(std::move(constructors))
 	{
 		for (std::size_t n = 0; n < constructors_.size(); ++n) {
@@ -656,13 +656,13 @@ public:
 	}
 
 	const std::string& name() const noexcept { return name_; }
-	inline const constr& sig() const noexcept { return sig_; }
+	inline const constr_t& sig() const noexcept { return sig_; }
 	inline const std::size_t bound() const noexcept { return bound_; }
 	inline const std::vector<constructor>& constructors() const noexcept { return constructors_; }
 
 private:
 	std::string name_;
-	constr sig_;
+	constr_t sig_;
 	std::size_t bound_;
 	std::vector<constructor> constructors_;
 };
@@ -696,7 +696,7 @@ struct globref_constructor {
 };
 
 struct globref_expr {
-	constr expr;
+	constr_t expr;
 };
 
 using globref = std::variant<globref_expr, globref_inductive, globref_constructor>;
@@ -708,46 +708,46 @@ using globals_registry = std::function<globref(const std::string&)>;
 
 namespace builder {
 
-constr
+constr_t
 local(std::string name, std::size_t index);
 
-constr
+constr_t
 global(std::string name);
 
-constr
+constr_t
 builtin_set();
 
-constr
+constr_t
 builtin_prop();
 
-constr
+constr_t
 builtin_sprop();
 
-constr
+constr_t
 builtin_type();
 
-constr
-let(std::optional<std::string> varname, constr value, constr body);
+constr_t
+let(std::optional<std::string> varname, constr_t value, constr_t body);
 
-constr
-product(std::vector<formal_arg_t> args, constr restype);
+constr_t
+product(std::vector<formal_arg_t> args, constr_t restype);
 
-constr
-lambda(std::vector<formal_arg_t> args, constr body);
+constr_t
+lambda(std::vector<formal_arg_t> args, constr_t body);
 
-constr
-let(std::optional<std::string> varname, constr value, constr body);
+constr_t
+let(std::optional<std::string> varname, constr_t value, constr_t body);
 
-constr
-apply(constr fn, std::vector<constr> arg);
+constr_t
+apply(constr_t fn, std::vector<constr_t> arg);
 
-constr
-cast(constr term, constr_cast::kind_type kind, constr typeterm);
+constr_t
+cast(constr_t term, constr_cast::kind_type kind, constr_t typeterm);
 
-constr
-match(constr restype, constr arg, std::vector<match_branch_t> branches);
+constr_t
+match(constr_t restype, constr_t arg, std::vector<match_branch_t> branches);
 
-constr
+constr_t
 fix(std::size_t index, std::shared_ptr<const fix_group_t> group);
 
 }  // builder

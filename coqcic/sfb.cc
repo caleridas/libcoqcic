@@ -288,13 +288,13 @@ sfb_module_type::operator==(const sfb_base& other) const noexcept
 namespace builder {
 
 sfb
-definition(std::string id, constr type, constr value)
+definition(std::string id, constr_t type, constr_t value)
 {
 	return sfb(std::make_shared<sfb_definition>(std::move(id), std::move(type), std::move(value)));
 }
 
 sfb
-axiom(std::string id, constr type)
+axiom(std::string id, constr_t type)
 {
 	return sfb(std::make_shared<sfb_axiom>(std::move(id), std::move(type)));
 }

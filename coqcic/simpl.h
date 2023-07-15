@@ -10,11 +10,11 @@ namespace coqcic {
 // variable references which are assumed to be valid at the level of the
 // expression just given (i.e. they will be shifted downwards if the substituion
 // occurs at a deeper level).
-constr
+constr_t
 local_subst(
-	const constr& input,
+	const constr_t& input,
 	std::size_t index,
-	std::vector<constr> subst);
+	std::vector<constr_t> subst);
 
 }  // namespace coqcic
 

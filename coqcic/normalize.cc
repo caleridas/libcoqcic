@@ -8,8 +8,8 @@ namespace {
 // - "apply-of-apply" will be flattened into a single apply
 // - "product-of-product" will be flattened into a single product
 // - "lambda-of-lambda" will be flattened into a single lambda
-std::optional<constr>
-normalize_rec(const constr& input)
+std::optional<constr_t>
+normalize_rec(const constr_t& input)
 {
 	if (input.as_local()) {
 		return {};
@@ -18,7 +18,7 @@ normalize_rec(const constr& input)
 	} else if (input.as_builtin()) {
 		return {};
 	} else if (auto product = input.as_product()) {
-		constr restype;
+		constr_t restype;
 		bool changed = false;
 		std::vector<formal_arg_t> args;
 
@@ -45,7 +45,7 @@ normalize_rec(const constr& input)
 			return {};
 		}
 	} else if (auto lambda = input.as_lambda()) {
-		constr body;
+		constr_t body;
 		bool changed = false;
 		std::vector<formal_arg_t> args;
 
@@ -84,10 +84,10 @@ normalize_rec(const constr& input)
 			return {};
 		}
 	} else if (auto apply = input.as_apply()) {
-		constr fn;
+		constr_t fn;
 		bool changed = false;
 		/* note that we will initially push args in reverse */
-		std::vector<constr> args;
+		std::vector<constr_t> args;
 
 		while (apply) {
 			for (auto i = apply->args().rbegin(); i != apply->args().rend(); ++i) {
@@ -186,8 +186,8 @@ normalize_rec(const constr& input)
 
 }  // namespace
 
-constr
-normalize(const constr& expr)
+constr_t
+normalize(const constr_t& expr)
 {
 	auto res = normalize_rec(expr);
 	return res ? *res : expr;

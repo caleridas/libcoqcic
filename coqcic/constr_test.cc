@@ -2,14 +2,14 @@
 
 #include "gtest/gtest.h"
 
-using coqcic::constr;
+using coqcic::constr_t;
 using coqcic::type_context_t;
 using namespace coqcic::builder;
 
 namespace {
 
 struct globals {
-	constr nat, O, S, list, nil, prod, pair, type, set;
+	constr_t nat, O, S, list, nil, prod, pair, type, set;
 };
 
 globals
@@ -29,7 +29,7 @@ build_globals()
 	return globals;
 }
 
-coqcic::constr
+coqcic::constr_t
 lookup_global(const globals& globals, const std::string& name)
 {
 	if (name == "nat") {
