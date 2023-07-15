@@ -17,7 +17,7 @@ TEST(CICFixSpecTest, list_reverse)
 				"rev",
 				{{"T", builtin_type()}, {"l", apply(global("list"), {local("T", 0)})}},
 				apply(global("list"), {local("T", 1)}),
-				case_match(
+				match(
 					apply(global("list"), {local("T", 2)}),
 					local("l", 0),
 					{
@@ -60,7 +60,7 @@ TEST(CICFixSpecTest, list_reverse)
 				"rev_nat",
 				{{"l", apply(global("list"), {global("nat")})}},
 				apply(global("list"), {global("nat")}),
-				case_match(
+				match(
 					apply(global("list"), {global("nat")}),
 					local("l", 0),
 					{

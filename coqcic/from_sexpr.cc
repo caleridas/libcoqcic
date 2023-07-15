@@ -69,7 +69,7 @@ match_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<case_repr::branch>
+from_sexpr_result<constr_match::branch>
 branch_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
@@ -89,7 +89,7 @@ branch_from_sexpr(const sexpr& e)
 			if (!expr) {
 				return expr.error();
 			}
-			return case_repr::branch {consname.move_value(), nargs.move_value(), expr.move_value() };
+			return constr_match::branch {consname.move_value(), nargs.move_value(), expr.move_value() };
 		} else {
 			return from_sexpr_error {"Unable to parse branch", &e};
 		}
@@ -98,14 +98,14 @@ branch_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<std::vector<case_repr::branch>>
+from_sexpr_result<std::vector<constr_match::branch>>
 branches_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
 		auto kind = c->kind();
 		auto args = c->args();
 		if (kind == "Branches") {
-			std::vector<case_repr::branch> branches;
+			std::vector<constr_match::branch> branches;
 			for (const auto& arg : args) {
 				auto branch = branch_from_sexpr(arg);
 				if (!branch) {
@@ -320,15 +320,15 @@ constr_from_sexpr(const sexpr& e)
 			if (!typeterm) {
 				return typeterm.error();
 			}
-			cast_repr::kind_type kind_enum;
+			constr_cast::kind_type kind_enum;
 			if (kind.value() == "VMcast") {
-				kind_enum = cast_repr::vm_cast;
+				kind_enum = constr_cast::vm_cast;
 			} else if (kind.value() == "DEFAULTcast") {
-				kind_enum = cast_repr::default_cast;
+				kind_enum = constr_cast::default_cast;
 			} else if (kind.value() == "REVERTcast") {
-				kind_enum = cast_repr::revert_cast;
+				kind_enum = constr_cast::revert_cast;
 			} else if (kind.value() == "NATIVEcast") {
-				kind_enum = cast_repr::native_cast;
+				kind_enum = constr_cast::native_cast;
 			} else {
 				return from_sexpr_error {"Unknown kind of cast", &e};
 			}
@@ -354,7 +354,7 @@ constr_from_sexpr(const sexpr& e)
 				return branches.error();
 			}
 			// XXX: casetype is not quite correct, needs one lambda abstraction removed
-			return builder::case_match(casetype.move_value(), match.move_value(), branches.move_value());
+			return builder::match(casetype.move_value(), match.move_value(), branches.move_value());
 		} else if (kind == "Fix") {
 			if (args.size() < 2) {
 				return from_sexpr_error {"Fix requires at least 2 arguments", &e};

@@ -124,7 +124,7 @@ normalize_rec(const constr& input)
 		} else {
 			return {};
 		}
-	} else if (auto match_case = input.as_case()) {
+	} else if (auto match_case = input.as_match()) {
 		auto maybe_arg = normalize_rec(match_case->arg());
 		const auto& arg = maybe_arg ? *maybe_arg : match_case->arg();
 
@@ -132,18 +132,18 @@ normalize_rec(const constr& input)
 		const auto& restype = maybe_restype ? *maybe_restype : match_case->restype();
 
 		bool changed = false;
-		std::vector<case_repr::branch> branches;
+		std::vector<constr_match::branch> branches;
 		for (const auto& branch : match_case->branches()) {
 			auto maybe_expr = normalize_rec(branch.expr);
 			changed = changed || maybe_expr;
 			const auto& expr = maybe_expr ? *maybe_expr : branch.expr;
-			branches.push_back(case_repr::branch{branch.constructor, branch.nargs, expr});
+			branches.push_back(constr_match::branch{branch.constructor, branch.nargs, expr});
 		}
 
 		changed = changed || maybe_arg || maybe_restype;
 
 		if (changed) {
-			return builder::case_match(restype, arg, branches);
+			return builder::match(restype, arg, branches);
 		} else {
 			return {};
 		}

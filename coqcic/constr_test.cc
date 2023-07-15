@@ -50,7 +50,7 @@ lookup_global(const globals& globals, const std::string& name)
 			apply(globals.prod, {local("A", 3), local("B", 2)})
 		);
 	} else {
-		throw std::runtime_error("Unbound global_repr");
+		throw std::runtime_error("Unbound constr_global");
 	}
 }
 

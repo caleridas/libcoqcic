@@ -13,18 +13,18 @@
 
 namespace coqcic {
 
-class constr_repr;
+class constr_base;
 
-class local_repr;
-class global_repr;
-class builtin_repr;
-class product_repr;
-class lambda_repr;
-class let_repr;
-class apply_repr;
-class cast_repr;
-class case_repr;
-class fix_repr;
+class constr_local;
+class constr_global;
+class constr_builtin;
+class constr_product;
+class constr_lambda;
+class constr_let;
+class constr_apply;
+class constr_cast;
+class constr_match;
+class constr_fix;
 
 class type_context;
 
@@ -32,7 +32,7 @@ class constr {
 public:
 	explicit
 	inline
-	constr(std::shared_ptr<const constr_repr> repr) noexcept
+	constr(std::shared_ptr<const constr_base> repr) noexcept
 		: repr_(std::move(repr))
 	{
 	}
@@ -74,35 +74,35 @@ public:
 	debug_string() const;
 
 	const
-	std::shared_ptr<const constr_repr>&
+	std::shared_ptr<const constr_base>&
 	repr() const noexcept
 	{
 		return repr_;
 	}
 
-	std::shared_ptr<const constr_repr>
+	std::shared_ptr<const constr_base>
 	extract_repr() && noexcept
 	{
 		return std::move(repr_);
 	}
 
-	inline const local_repr* as_local() const noexcept;
-	inline const global_repr* as_global() const noexcept;
-	inline const builtin_repr* as_builtin() const noexcept;
-	inline const product_repr* as_product() const noexcept;
-	inline const lambda_repr* as_lambda() const noexcept;
-	inline const let_repr* as_let() const noexcept;
-	inline const apply_repr* as_apply() const noexcept;
-	inline const cast_repr* as_cast() const noexcept;
-	inline const case_repr* as_case() const noexcept;
-	inline const fix_repr* as_fix() const noexcept;
+	inline const constr_local* as_local() const noexcept;
+	inline const constr_global* as_global() const noexcept;
+	inline const constr_builtin* as_builtin() const noexcept;
+	inline const constr_product* as_product() const noexcept;
+	inline const constr_lambda* as_lambda() const noexcept;
+	inline const constr_let* as_let() const noexcept;
+	inline const constr_apply* as_apply() const noexcept;
+	inline const constr_cast* as_cast() const noexcept;
+	inline const constr_match* as_match() const noexcept;
+	inline const constr_fix* as_fix() const noexcept;
 
 	template<typename Visitor>
 	inline auto
 	visit(Visitor&& vis) const;
 
 private:
-	std::shared_ptr<const constr_repr> repr_;
+	std::shared_ptr<const constr_base> repr_;
 };
 
 struct formal_arg {
@@ -137,14 +137,14 @@ public:
 
 	shared_stack<local_entry> locals;
 
-	// Map global_repr name to its type
+	// Map constr_global name to its type
 	std::function<constr(const std::string&)> global_types;
 };
 
-class constr_repr : public std::enable_shared_from_this<constr_repr> {
+class constr_base : public std::enable_shared_from_this<constr_base> {
 public:
 	virtual
-	~constr_repr();
+	~constr_base();
 
 	virtual
 	void
@@ -152,7 +152,7 @@ public:
 
 	virtual
 	bool
-	operator==(const constr_repr& other) const noexcept = 0;
+	operator==(const constr_base& other) const noexcept = 0;
 
 	virtual
 	constr
@@ -170,11 +170,11 @@ public:
 	repr() const;
 };
 
-class local_repr final : public constr_repr {
+class constr_local final : public constr_base {
 public:
-	~local_repr() override;
+	~constr_local() override;
 
-	local_repr(
+	constr_local(
 		std::string name,
 		std::size_t index);
 
@@ -182,7 +182,7 @@ public:
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -203,19 +203,19 @@ private:
 	std::size_t index_;
 };
 
-class global_repr final : public constr_repr {
+class constr_global final : public constr_base {
 public:
-	~global_repr() override;
+	~constr_global() override;
 
 	explicit
-	global_repr(
+	constr_global(
 		std::string name);
 
 	void
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -228,19 +228,19 @@ private:
 	std::string name_;
 };
 
-class builtin_repr final : public constr_repr {
+class constr_builtin final : public constr_base {
 public:
-	~builtin_repr() override;
+	~constr_builtin() override;
 
-	builtin_repr(
+	constr_builtin(
 		std::string name,
-		std::function<constr(const constr_repr&)> check);
+		std::function<constr(const constr_base&)> check);
 
 	void
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -250,37 +250,37 @@ public:
 	name() const noexcept { return name_; }
 
 	static
-	std::shared_ptr<const constr_repr>
+	std::shared_ptr<const constr_base>
 	get_set();
 
 	static
-	std::shared_ptr<const constr_repr>
+	std::shared_ptr<const constr_base>
 	get_prop();
 
 	static
-	std::shared_ptr<const constr_repr>
+	std::shared_ptr<const constr_base>
 	get_sprop();
 
 	static
-	std::shared_ptr<const constr_repr>
+	std::shared_ptr<const constr_base>
 	get_type();
 
 private:
 	std::string name_;
-	std::function<constr(const constr_repr&)> check_;
+	std::function<constr(const constr_base&)> check_;
 };
 
-class product_repr final : public constr_repr {
+class constr_product final : public constr_base {
 public:
-	~product_repr() override;
+	~constr_product() override;
 
-	product_repr(std::vector<formal_arg> args, constr restype);
+	constr_product(std::vector<formal_arg> args, constr restype);
 
 	void
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -301,17 +301,17 @@ private:
 	constr restype_;
 };
 
-class lambda_repr final : public constr_repr {
+class constr_lambda final : public constr_base {
 public:
-	~lambda_repr() override;
+	~constr_lambda() override;
 
-	lambda_repr(std::vector<formal_arg> args, constr body);
+	constr_lambda(std::vector<formal_arg> args, constr body);
 
 	void
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -333,11 +333,11 @@ private:
 	constr body_;
 };
 
-class let_repr final : public constr_repr {
+class constr_let final : public constr_base {
 public:
-	~let_repr() override;
+	~constr_let() override;
 
-	let_repr(
+	constr_let(
 		std::optional<std::string> varname,
 		constr value,
 		constr body);
@@ -346,7 +346,7 @@ public:
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -372,17 +372,17 @@ private:
 	constr body_;
 };
 
-class apply_repr final : public constr_repr {
+class constr_apply final : public constr_base {
 public:
-	~apply_repr() override;
+	~constr_apply() override;
 
-	apply_repr(constr fn, std::vector<constr> args);
+	constr_apply(constr fn, std::vector<constr> args);
 
 	void
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -406,7 +406,7 @@ private:
 	std::vector<constr> args_;
 };
 
-class cast_repr final : public constr_repr {
+class constr_cast final : public constr_base {
 public:
 	enum kind_type {
 		vm_cast,
@@ -415,15 +415,15 @@ public:
 		native_cast
 	};
 
-	~cast_repr() override;
+	~constr_cast() override;
 
-	cast_repr(constr term, kind_type kind, constr typeterm);
+	constr_cast(constr term, kind_type kind, constr typeterm);
 
 	void
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -449,7 +449,7 @@ private:
 	constr typeterm_;
 };
 
-class case_repr final : public constr_repr {
+class constr_match final : public constr_base {
 public:
 	struct branch {
 		std::string constructor;
@@ -466,15 +466,15 @@ public:
 		}
 	};
 
-	~case_repr() override;
+	~constr_match() override;
 
-	case_repr(constr restype, constr arg, std::vector<branch> branches);
+	constr_match(constr restype, constr arg, std::vector<branch> branches);
 
 	void
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -530,17 +530,17 @@ struct fix_group {
 	}
 };
 
-class fix_repr final : public constr_repr {
+class constr_fix final : public constr_base {
 public:
-	~fix_repr() override;
+	~constr_fix() override;
 
-	fix_repr(std::size_t index, std::shared_ptr<const fix_group> group);
+	constr_fix(std::size_t index, std::shared_ptr<const fix_group> group);
 
 	void
 	format(std::string& out) const override;
 
 	bool
-	operator==(const constr_repr& other) const noexcept override;
+	operator==(const constr_base& other) const noexcept override;
 
 	constr
 	check(const type_context& ctx) const override;
@@ -564,16 +564,16 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 // constr implementations
 
-const local_repr* constr::as_local() const noexcept { return dynamic_cast<const local_repr*>(repr_.get()); }
-const global_repr* constr::as_global() const noexcept { return dynamic_cast<const global_repr*>(repr_.get()); }
-const builtin_repr* constr::as_builtin() const noexcept { return dynamic_cast<const builtin_repr*>(repr_.get()); }
-const product_repr* constr::as_product() const noexcept { return dynamic_cast<const product_repr*>(repr_.get()); }
-const lambda_repr* constr::as_lambda() const noexcept { return dynamic_cast<const lambda_repr*>(repr_.get()); }
-const let_repr* constr::as_let() const noexcept { return dynamic_cast<const let_repr*>(repr_.get()); }
-const apply_repr* constr::as_apply() const noexcept { return dynamic_cast<const apply_repr*>(repr_.get()); }
-const cast_repr* constr::as_cast() const noexcept { return dynamic_cast<const cast_repr*>(repr_.get()); }
-const case_repr* constr::as_case() const noexcept { return dynamic_cast<const case_repr*>(repr_.get()); }
-const fix_repr* constr::as_fix() const noexcept { return dynamic_cast<const fix_repr*>(repr_.get()); }
+const constr_local* constr::as_local() const noexcept { return dynamic_cast<const constr_local*>(repr_.get()); }
+const constr_global* constr::as_global() const noexcept { return dynamic_cast<const constr_global*>(repr_.get()); }
+const constr_builtin* constr::as_builtin() const noexcept { return dynamic_cast<const constr_builtin*>(repr_.get()); }
+const constr_product* constr::as_product() const noexcept { return dynamic_cast<const constr_product*>(repr_.get()); }
+const constr_lambda* constr::as_lambda() const noexcept { return dynamic_cast<const constr_lambda*>(repr_.get()); }
+const constr_let* constr::as_let() const noexcept { return dynamic_cast<const constr_let*>(repr_.get()); }
+const constr_apply* constr::as_apply() const noexcept { return dynamic_cast<const constr_apply*>(repr_.get()); }
+const constr_cast* constr::as_cast() const noexcept { return dynamic_cast<const constr_cast*>(repr_.get()); }
+const constr_match* constr::as_match() const noexcept { return dynamic_cast<const constr_match*>(repr_.get()); }
+const constr_fix* constr::as_fix() const noexcept { return dynamic_cast<const constr_fix*>(repr_.get()); }
 
 template<typename Visitor>
 inline auto
@@ -595,7 +595,7 @@ constr::visit(Visitor&& vis) const
 		return vis(*apply);
 	} else if (auto cast = as_cast()) {
 		return vis(*cast);
-	} else if (auto match_case = as_case()) {
+	} else if (auto match_case = as_match()) {
 		return vis(*match_case);
 	} else if (auto fix = as_fix()) {
 		return vis(*fix);
@@ -725,10 +725,10 @@ constr
 apply(constr fn, std::vector<constr> arg);
 
 constr
-cast(constr term, cast_repr::kind_type kind, constr typeterm);
+cast(constr term, constr_cast::kind_type kind, constr typeterm);
 
 constr
-case_match(constr restype, constr arg, std::vector<case_repr::branch> branches);
+match(constr restype, constr arg, std::vector<constr_match::branch> branches);
 
 constr
 fix(std::size_t index, std::shared_ptr<const fix_group> group);

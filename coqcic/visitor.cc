@@ -62,13 +62,13 @@ transform_visitor::handle_apply(const constr& fn, const std::vector<constr>& arg
 }
 
 std::optional<constr>
-transform_visitor::handle_cast(const constr& term, const cast_repr::kind_type kind, const constr& typeterm)
+transform_visitor::handle_cast(const constr& term, const constr_cast::kind_type kind, const constr& typeterm)
 {
 	return {};
 }
 
 std::optional<constr>
-transform_visitor::handle_case(const constr& argtype, const constr& restype, const std::vector<case_repr::branch>& branches)
+transform_visitor::handle_case(const constr& argtype, const constr& restype, const std::vector<constr_match::branch>& branches)
 {
 	return {};
 }
@@ -201,7 +201,7 @@ visit_transform(
 		} else {
 			return {};
 		}
-	} else if (auto match_case = input.as_case()) {
+	} else if (auto match_case = input.as_match()) {
 		auto maybe_arg = visit_transform(match_case->arg(), visitor);
 		const auto& arg = maybe_arg ? *maybe_arg : match_case->arg();
 
@@ -214,7 +214,7 @@ visit_transform(
 		visitor.pop_local();
 
 		bool changed = false;
-		std::vector<case_repr::branch> branches;
+		std::vector<constr_match::branch> branches;
 		for (const auto& branch : match_case->branches()) {
 			for (std::size_t n = 0; n < branch.nargs; ++n) {
 				visitor.push_local(nullptr, nullptr, nullptr);
@@ -225,7 +225,7 @@ visit_transform(
 			}
 			changed = changed || maybe_expr;
 			const auto& expr = maybe_expr ? *maybe_expr : branch.expr;
-			branches.push_back(case_repr::branch{branch.constructor, branch.nargs, expr});
+			branches.push_back(constr_match::branch{branch.constructor, branch.nargs, expr});
 		}
 
 		changed = changed || maybe_arg || maybe_restype;
@@ -234,7 +234,7 @@ visit_transform(
 		if (result) {
 			return result;
 		} else if (changed) {
-			return builder::case_match(restype, arg, branches);
+			return builder::match(restype, arg, branches);
 		} else {
 			return {};
 		}

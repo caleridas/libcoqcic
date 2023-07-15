@@ -56,11 +56,11 @@ public:
 
 	virtual
 	std::optional<constr>
-	handle_cast(const constr& term, const cast_repr::kind_type kind, const constr& typeterm);
+	handle_cast(const constr& term, const constr_cast::kind_type kind, const constr& typeterm);
 
 	virtual
 	std::optional<constr>
-	handle_case(const constr& restype, const constr& arg, const std::vector<case_repr::branch>& branches);
+	handle_case(const constr& restype, const constr& arg, const std::vector<constr_match::branch>& branches);
 
 	virtual
 	std::optional<constr>
