@@ -9,19 +9,19 @@
 
 namespace coqcic {
 
-class sfb_repr;
+class sfb_base;
 
-class inductive_repr;
-class definition_repr;
-class axiom_repr;
-class module_repr;
-class module_type_repr;
+class sfb_inductive;
+class sfb_definition;
+class sfb_axiom;
+class sfb_module;
+class sfb_module_type;
 
 class sfb {
 public:
 	explicit
 	inline
-	sfb(std::shared_ptr<const sfb_repr> repr) noexcept
+	sfb(std::shared_ptr<const sfb_base> repr) noexcept
 		: repr_(std::move(repr))
 	{
 	}
@@ -57,36 +57,36 @@ public:
 	debug_string() const;
 
 	const
-	std::shared_ptr<const sfb_repr>&
+	std::shared_ptr<const sfb_base>&
 	repr() const noexcept
 	{
 		return repr_;
 	}
 
-	std::shared_ptr<const sfb_repr>
+	std::shared_ptr<const sfb_base>
 	extract_repr() && noexcept
 	{
 		return std::move(repr_);
 	}
 
-	inline const definition_repr* as_definition() const noexcept;
-	inline const axiom_repr* as_axiom() const noexcept;
-	inline const inductive_repr* as_inductive() const noexcept;
-	inline const module_repr* as_module() const noexcept;
-	inline const module_type_repr* as_module_type() const noexcept;
+	inline const sfb_definition* as_definition() const noexcept;
+	inline const sfb_axiom* as_axiom() const noexcept;
+	inline const sfb_inductive* as_inductive() const noexcept;
+	inline const sfb_module* as_module() const noexcept;
+	inline const sfb_module_type* as_module_type() const noexcept;
 
 	template<typename Visitor>
 	inline auto
 	visit(Visitor&& vis);
 
 private:
-	std::shared_ptr<const sfb_repr> repr_;
+	std::shared_ptr<const sfb_base> repr_;
 };
 
-class sfb_repr : public std::enable_shared_from_this<sfb_repr> {
+class sfb_base : public std::enable_shared_from_this<sfb_base> {
 public:
 	virtual
-	~sfb_repr();
+	~sfb_base();
 
 	virtual
 	void
@@ -94,18 +94,18 @@ public:
 
 	virtual
 	bool
-	operator==(const sfb_repr& other) const noexcept = 0;
+	operator==(const sfb_base& other) const noexcept = 0;
 
 	std::string
 	repr() const;
 };
 
-class definition_repr final : public sfb_repr {
+class sfb_definition final : public sfb_base {
 public:
-	~definition_repr() override;
+	~sfb_definition() override;
 
 	inline
-	definition_repr(std::string id, constr type, constr value) noexcept
+	sfb_definition(std::string id, constr type, constr value) noexcept
 		: id_(std::move(id)), type_(std::move(type)), value_(std::move(value))
 	{
 	}
@@ -114,7 +114,7 @@ public:
 	format(std::string& out) const override;
 
 	bool
-	operator==(const sfb_repr& other) const noexcept override;
+	operator==(const sfb_base& other) const noexcept override;
 
 	inline const std::string&
 	id() const noexcept
@@ -140,12 +140,12 @@ private:
 	constr value_;
 };
 
-class axiom_repr final : public sfb_repr {
+class sfb_axiom final : public sfb_base {
 public:
-	~axiom_repr() override;
+	~sfb_axiom() override;
 
 	inline
-	axiom_repr(std::string id, constr type) noexcept
+	sfb_axiom(std::string id, constr type) noexcept
 		: id_(std::move(id)), type_(std::move(type))
 	{
 	}
@@ -154,7 +154,7 @@ public:
 	format(std::string& out) const override;
 
 	bool
-	operator==(const sfb_repr& other) const noexcept override;
+	operator==(const sfb_base& other) const noexcept override;
 	inline const std::string&
 
 	id() const noexcept
@@ -217,12 +217,12 @@ struct one_inductive {
 	}
 };
 
-class inductive_repr final : public sfb_repr {
+class sfb_inductive final : public sfb_base {
 public:
-	~inductive_repr() override;
+	~sfb_inductive() override;
 
 	inline
-	inductive_repr(std::vector<one_inductive> one_inductives) noexcept
+	sfb_inductive(std::vector<one_inductive> one_inductives) noexcept
 		: one_inductives_(std::move(one_inductives))
 	{
 	}
@@ -231,7 +231,7 @@ public:
 	format(std::string& out) const override;
 
 	bool
-	operator==(const sfb_repr& other) const noexcept override;
+	operator==(const sfb_base& other) const noexcept override;
 
 	inline const std::vector<one_inductive>&
 	one_inductives() const noexcept
@@ -400,12 +400,12 @@ private:
 	std::vector<sfb> body_;
 };
 
-class module_repr final : public sfb_repr {
+class sfb_module final : public sfb_base {
 public:
-	~module_repr() override;
+	~sfb_module() override;
 
 	inline
-	module_repr(std::string id, module_body body) noexcept
+	sfb_module(std::string id, module_body body) noexcept
 		: id_(std::move(id)), body_(std::move(body))
 	{
 	}
@@ -414,7 +414,7 @@ public:
 	format(std::string& out) const override;
 
 	bool
-	operator==(const sfb_repr& other) const noexcept override;
+	operator==(const sfb_base& other) const noexcept override;
 
 	inline const std::string& id() const noexcept { return id_; }
 	inline const module_body& body() const noexcept { return body_; }
@@ -424,12 +424,12 @@ private:
 	module_body body_;
 };
 
-class module_type_repr final : public sfb_repr {
+class sfb_module_type final : public sfb_base {
 public:
-	~module_type_repr() override;
+	~sfb_module_type() override;
 
 	inline
-	module_type_repr(std::string id, module_body body) noexcept
+	sfb_module_type(std::string id, module_body body) noexcept
 		: id_(std::move(id)), body_(std::move(body))
 	{
 	}
@@ -438,7 +438,7 @@ public:
 	format(std::string& out) const override;
 
 	bool
-	operator==(const sfb_repr& other) const noexcept override;
+	operator==(const sfb_base& other) const noexcept override;
 
 	inline const std::string& id() const noexcept { return id_; }
 	inline const module_body& body() const noexcept { return body_; }
@@ -449,34 +449,34 @@ private:
 	module_body body_;
 };
 
-inline const definition_repr*
+inline const sfb_definition*
 sfb::as_definition() const noexcept
 {
-	return dynamic_cast<const definition_repr*>(repr_.get());
+	return dynamic_cast<const sfb_definition*>(repr_.get());
 }
 
-inline const axiom_repr*
+inline const sfb_axiom*
 sfb::as_axiom() const noexcept
 {
-	return dynamic_cast<const axiom_repr*>(repr_.get());
+	return dynamic_cast<const sfb_axiom*>(repr_.get());
 }
 
-inline const inductive_repr*
+inline const sfb_inductive*
 sfb::as_inductive() const noexcept
 {
-	return dynamic_cast<const inductive_repr*>(repr_.get());
+	return dynamic_cast<const sfb_inductive*>(repr_.get());
 }
 
-inline const module_repr*
+inline const sfb_module*
 sfb::as_module() const noexcept
 {
-	return dynamic_cast<const module_repr*>(repr_.get());
+	return dynamic_cast<const sfb_module*>(repr_.get());
 }
 
-inline const module_type_repr*
+inline const sfb_module_type*
 sfb::as_module_type() const noexcept
 {
-	return dynamic_cast<const module_type_repr*>(repr_.get());
+	return dynamic_cast<const sfb_module_type*>(repr_.get());
 }
 
 template<typename Visitor>

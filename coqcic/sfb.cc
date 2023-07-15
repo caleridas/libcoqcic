@@ -26,13 +26,13 @@ sfb::debug_string() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// sfb_repr
+// sfb_base
 
-sfb_repr::~sfb_repr()
+sfb_base::~sfb_base()
 {
 }
 std::string
-sfb_repr::repr() const
+sfb_base::repr() const
 {
 	std::string s;
 	format(s);
@@ -40,14 +40,14 @@ sfb_repr::repr() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// definition_repr
+// sfb_definition
 
-definition_repr::~definition_repr()
+sfb_definition::~sfb_definition()
 {
 }
 
 void
-definition_repr::format(std::string& out) const
+sfb_definition::format(std::string& out) const
 {
 	out += "Definition " + id_ + " : ";
 	type_.format(out);
@@ -57,9 +57,9 @@ definition_repr::format(std::string& out) const
 }
 
 bool
-definition_repr::operator==(const sfb_repr& other) const noexcept
+sfb_definition::operator==(const sfb_base& other) const noexcept
 {
-	if (auto d = dynamic_cast<const definition_repr*>(&other)) {
+	if (auto d = dynamic_cast<const sfb_definition*>(&other)) {
 		return id_ == d->id_ && type_ == d->type_ && value_ == d->value_;
 	} else {
 		return false;
@@ -67,14 +67,14 @@ definition_repr::operator==(const sfb_repr& other) const noexcept
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// axiom_repr
+// sfb_axiom
 
-axiom_repr::~axiom_repr()
+sfb_axiom::~sfb_axiom()
 {
 }
 
 void
-axiom_repr::format(std::string& out) const
+sfb_axiom::format(std::string& out) const
 {
 	out += "Definition " + id_ + " : ";
 	type_.format(out);
@@ -82,9 +82,9 @@ axiom_repr::format(std::string& out) const
 }
 
 bool
-axiom_repr::operator==(const sfb_repr& other) const noexcept
+sfb_axiom::operator==(const sfb_base& other) const noexcept
 {
-	if (auto a = dynamic_cast<const axiom_repr*>(&other)) {
+	if (auto a = dynamic_cast<const sfb_axiom*>(&other)) {
 		return id_ == a->id_ && type_ == a->type_;
 	} else {
 		return false;
@@ -92,14 +92,14 @@ axiom_repr::operator==(const sfb_repr& other) const noexcept
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// inductive_repr
+// sfb_inductive
 
-inductive_repr::~inductive_repr()
+sfb_inductive::~sfb_inductive()
 {
 }
 
 void
-inductive_repr::format(std::string& out) const
+sfb_inductive::format(std::string& out) const
 {
 	bool first = true;
 	for (const auto& ind : one_inductives_) {
@@ -122,9 +122,9 @@ inductive_repr::format(std::string& out) const
 }
 
 bool
-inductive_repr::operator==(const sfb_repr& other) const noexcept
+sfb_inductive::operator==(const sfb_base& other) const noexcept
 {
-	if (auto i = dynamic_cast<const inductive_repr*>(&other)) {
+	if (auto i = dynamic_cast<const sfb_inductive*>(&other)) {
 		return one_inductives_ == i->one_inductives_;
 	} else {
 		return false;
@@ -235,14 +235,14 @@ module_body_struct_repr::operator==(const module_body_repr& other) const noexcep
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// module_repr
+// sfb_module
 
-module_repr::~module_repr()
+sfb_module::~sfb_module()
 {
 }
 
 void
-module_repr::format(std::string& out) const
+sfb_module::format(std::string& out) const
 {
 	out += "Module " + id_;
 	body_.format(out);
@@ -250,9 +250,9 @@ module_repr::format(std::string& out) const
 }
 
 bool
-module_repr::operator==(const sfb_repr& other) const noexcept
+sfb_module::operator==(const sfb_base& other) const noexcept
 {
-	if (auto m = dynamic_cast<const module_repr*>(&other)) {
+	if (auto m = dynamic_cast<const sfb_module*>(&other)) {
 		return id_ == m->id_ && body_ == m->body_;
 	} else {
 		return false;
@@ -260,14 +260,14 @@ module_repr::operator==(const sfb_repr& other) const noexcept
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// module_type_repr
+// sfb_module_type
 
-module_type_repr::~module_type_repr()
+sfb_module_type::~sfb_module_type()
 {
 }
 
 void
-module_type_repr::format(std::string& out) const
+sfb_module_type::format(std::string& out) const
 {
 	out += "ModuleType " + id_;
 	body_.format(out);
@@ -275,9 +275,9 @@ module_type_repr::format(std::string& out) const
 }
 
 bool
-module_type_repr::operator==(const sfb_repr& other) const noexcept
+sfb_module_type::operator==(const sfb_base& other) const noexcept
 {
-	if (auto m = dynamic_cast<const module_type_repr*>(&other)) {
+	if (auto m = dynamic_cast<const sfb_module_type*>(&other)) {
 		return id_ == m->id_ && body_ == m->body_;
 	} else {
 		return false;
@@ -290,31 +290,31 @@ namespace builder {
 sfb
 definition(std::string id, constr type, constr value)
 {
-	return sfb(std::make_shared<definition_repr>(std::move(id), std::move(type), std::move(value)));
+	return sfb(std::make_shared<sfb_definition>(std::move(id), std::move(type), std::move(value)));
 }
 
 sfb
 axiom(std::string id, constr type)
 {
-	return sfb(std::make_shared<axiom_repr>(std::move(id), std::move(type)));
+	return sfb(std::make_shared<sfb_axiom>(std::move(id), std::move(type)));
 }
 
 sfb
 inductive(std::vector<one_inductive> one_inductives)
 {
-	return sfb(std::make_shared<inductive_repr>(std::move(one_inductives)));
+	return sfb(std::make_shared<sfb_inductive>(std::move(one_inductives)));
 }
 
 sfb
 module_def(std::string id, module_body body)
 {
-	return sfb(std::make_shared<module_repr>(std::move(id), std::move(body)));
+	return sfb(std::make_shared<sfb_module>(std::move(id), std::move(body)));
 }
 
 sfb
 module_type_def(std::string id, module_body body)
 {
-	return sfb(std::make_shared<module_type_repr>(std::move(id), std::move(body)));
+	return sfb(std::make_shared<sfb_module_type>(std::move(id), std::move(body)));
 }
 
 }  // builder
