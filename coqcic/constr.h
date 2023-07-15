@@ -13,8 +13,10 @@
 
 namespace coqcic {
 
+// Abstract base representation class for CIC constrs.
 class constr_base;
 
+// Representation classes for different CIC constrs.
 class constr_local;
 class constr_global;
 class constr_builtin;
@@ -28,6 +30,8 @@ class constr_fix;
 
 class type_context;
 
+// A CIC constr, represented as one of the representation
+// classes above.
 class constr {
 public:
 	explicit
@@ -105,20 +109,70 @@ private:
 	std::shared_ptr<const constr_base> repr_;
 };
 
-struct formal_arg {
+// A formal argument to a function.
+struct formal_arg_t {
 	std::optional<std::string> name;
 	constr type;
 
 	inline
 	bool
-	operator==(const formal_arg& other) const noexcept
+	operator==(const formal_arg_t& other) const noexcept
 	{
 		return type == other.type;
 	}
 
 	inline
 	bool
-	operator!=(const formal_arg& other) const noexcept { return ! (*this == other); }
+	operator!=(const formal_arg_t& other) const noexcept { return ! (*this == other); }
+};
+
+// A single case branch of a "match" expression.
+struct match_branch_t {
+	// Id of the constructor that is matched on.
+	std::string constructor;
+	// Number of arguments matched.
+	std::size_t nargs;
+	// Lambda expression of the match.
+	constr expr;
+
+	inline bool
+	operator==(const match_branch_t& other) const noexcept
+	{
+		return
+			constructor == other.constructor &&
+			nargs == other.nargs &&
+			expr == other.expr;
+	}
+};
+
+// A single function of a mutual fixpoint bundle.
+struct fix_function_t {
+	// Name of the function within the bundle.
+	std::string name;
+	// Formal arguments of this function.
+	std::vector<formal_arg_t> args;
+	// Result type of this function (dependent on args).
+	constr restype;
+	// Body of this function (dependent on all functions in this bundle as well as the args).
+	constr body;
+
+	inline bool
+	operator==(const fix_function_t& other) const noexcept
+	{
+		return name == other.name && args == other.args && restype == other.restype && body == other.body;
+	}
+};
+
+// A bundle fixpoint functions that mutually depend on each other.
+struct fix_group_t {
+	using function = fix_function_t;
+	std::vector<fix_function_t> functions;
+
+	inline bool
+	operator==(const fix_group_t& other) const noexcept
+	{
+		return functions == other.functions;
+	}
 };
 
 // Collect the de Bruijn indices of all locals in this object that
@@ -274,7 +328,7 @@ class constr_product final : public constr_base {
 public:
 	~constr_product() override;
 
-	constr_product(std::vector<formal_arg> args, constr restype);
+	constr_product(std::vector<formal_arg_t> args, constr restype);
 
 	void
 	format(std::string& out) const override;
@@ -289,7 +343,7 @@ public:
 	shift(std::size_t limit, int dir) const override;
 
 	inline
-	const std::vector<formal_arg>&
+	const std::vector<formal_arg_t>&
 	args() const noexcept { return args_; }
 
 	inline
@@ -297,7 +351,7 @@ public:
 	restype() const noexcept { return restype_; }
 
 private:
-	std::vector<formal_arg> args_;
+	std::vector<formal_arg_t> args_;
 	constr restype_;
 };
 
@@ -305,7 +359,7 @@ class constr_lambda final : public constr_base {
 public:
 	~constr_lambda() override;
 
-	constr_lambda(std::vector<formal_arg> args, constr body);
+	constr_lambda(std::vector<formal_arg_t> args, constr body);
 
 	void
 	format(std::string& out) const override;
@@ -320,7 +374,7 @@ public:
 	shift(std::size_t limit, int dir) const override;
 
 	inline
-	const std::vector<formal_arg>&
+	const std::vector<formal_arg_t>&
 	args() const noexcept { return args_; }
 
 	inline
@@ -328,7 +382,7 @@ public:
 	body() const noexcept { return body_; }
 
 private:
-	std::vector<formal_arg> args_;
+	std::vector<formal_arg_t> args_;
 	constr argtype_;
 	constr body_;
 };
@@ -451,24 +505,9 @@ private:
 
 class constr_match final : public constr_base {
 public:
-	struct branch {
-		std::string constructor;
-		std::size_t nargs;
-		constr expr;
-
-		inline bool
-		operator==(const branch& other) const noexcept
-		{
-			return
-				constructor == other.constructor &&
-				nargs == other.nargs &&
-				expr == other.expr;
-		}
-	};
-
 	~constr_match() override;
 
-	constr_match(constr restype, constr arg, std::vector<branch> branches);
+	constr_match(constr restype, constr arg, std::vector<match_branch_t> branches);
 
 	void
 	format(std::string& out) const override;
@@ -498,43 +537,20 @@ public:
 	// (Type) arguments to the inductive type itself are not included as
 	// arguments.
 	inline
-	const std::vector<branch>&
+	const std::vector<match_branch_t>&
 	branches() const noexcept { return branches_; }
 
 private:
 	constr restype_;
 	constr arg_;
-	std::vector<branch> branches_;
-};
-
-struct fix_group {
-	struct function {
-		std::string name;
-		std::vector<formal_arg> args;
-		constr restype;
-		constr body;
-
-		inline bool
-		operator==(const function& other) const noexcept
-		{
-			return name == other.name && args == other.args && restype == other.restype && body == other.body;
-		}
-	};
-
-	std::vector<function> functions;
-
-	inline bool
-	operator==(const fix_group& other) const noexcept
-	{
-		return functions == other.functions;
-	}
+	std::vector<match_branch_t> branches_;
 };
 
 class constr_fix final : public constr_base {
 public:
 	~constr_fix() override;
 
-	constr_fix(std::size_t index, std::shared_ptr<const fix_group> group);
+	constr_fix(std::size_t index, std::shared_ptr<const fix_group_t> group);
 
 	void
 	format(std::string& out) const override;
@@ -553,12 +569,12 @@ public:
 	index() const noexcept { return index_; }
 
 	inline
-	const std::shared_ptr<const fix_group>&
+	const std::shared_ptr<const fix_group_t>&
 	group() const noexcept { return group_; }
 
 private:
 	std::size_t index_;
-	std::shared_ptr<const fix_group> group_;
+	std::shared_ptr<const fix_group_t> group_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -713,10 +729,10 @@ constr
 let(std::optional<std::string> varname, constr value, constr body);
 
 constr
-product(std::vector<formal_arg> args, constr restype);
+product(std::vector<formal_arg_t> args, constr restype);
 
 constr
-lambda(std::vector<formal_arg> args, constr body);
+lambda(std::vector<formal_arg_t> args, constr body);
 
 constr
 let(std::optional<std::string> varname, constr value, constr body);
@@ -728,10 +744,10 @@ constr
 cast(constr term, constr_cast::kind_type kind, constr typeterm);
 
 constr
-match(constr restype, constr arg, std::vector<constr_match::branch> branches);
+match(constr restype, constr arg, std::vector<match_branch_t> branches);
 
 constr
-fix(std::size_t index, std::shared_ptr<const fix_group> group);
+fix(std::size_t index, std::shared_ptr<const fix_group_t> group);
 
 }  // builder
 

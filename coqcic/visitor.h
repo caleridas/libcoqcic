@@ -40,11 +40,11 @@ public:
 
 	virtual
 	std::optional<constr>
-	handle_product(const std::vector<formal_arg>& args, const constr& restype);
+	handle_product(const std::vector<formal_arg_t>& args, const constr& restype);
 
 	virtual
 	std::optional<constr>
-	handle_lambda(const std::vector<formal_arg>& args, const constr& body);
+	handle_lambda(const std::vector<formal_arg_t>& args, const constr& body);
 
 	virtual
 	std::optional<constr>
@@ -60,11 +60,11 @@ public:
 
 	virtual
 	std::optional<constr>
-	handle_case(const constr& restype, const constr& arg, const std::vector<constr_match::branch>& branches);
+	handle_case(const constr& restype, const constr& arg, const std::vector<match_branch_t>& branches);
 
 	virtual
 	std::optional<constr>
-	handle_fix(std::size_t index, const std::shared_ptr<const fix_group>& group);
+	handle_fix(std::size_t index, const std::shared_ptr<const fix_group_t>& group);
 };
 
 std::optional<constr>

@@ -20,13 +20,13 @@ normalize_rec(const constr& input)
 	} else if (auto product = input.as_product()) {
 		constr restype;
 		bool changed = false;
-		std::vector<formal_arg> args;
+		std::vector<formal_arg_t> args;
 
 		while (product) {
 			for (const auto& arg : product->args()) {
 				auto maybe_argtype = normalize_rec(arg.type);
 				changed = changed || maybe_argtype;
-				args.push_back(maybe_argtype ? formal_arg{arg.name, *maybe_argtype} : arg);
+				args.push_back(maybe_argtype ? formal_arg_t{arg.name, *maybe_argtype} : arg);
 			}
 			restype = product->restype();
 			product = restype.as_product();
@@ -47,13 +47,13 @@ normalize_rec(const constr& input)
 	} else if (auto lambda = input.as_lambda()) {
 		constr body;
 		bool changed = false;
-		std::vector<formal_arg> args;
+		std::vector<formal_arg_t> args;
 
 		while (lambda) {
 			for (const auto& arg : lambda->args()) {
 				auto maybe_argtype = normalize_rec(arg.type);
 				changed = changed || maybe_argtype;
-				args.push_back(maybe_argtype ? formal_arg{arg.name, *maybe_argtype} : arg);
+				args.push_back(maybe_argtype ? formal_arg_t{arg.name, *maybe_argtype} : arg);
 			}
 			body = lambda->body();
 			lambda = body.as_lambda();
@@ -132,12 +132,12 @@ normalize_rec(const constr& input)
 		const auto& restype = maybe_restype ? *maybe_restype : match_case->restype();
 
 		bool changed = false;
-		std::vector<constr_match::branch> branches;
+		std::vector<match_branch_t> branches;
 		for (const auto& branch : match_case->branches()) {
 			auto maybe_expr = normalize_rec(branch.expr);
 			changed = changed || maybe_expr;
 			const auto& expr = maybe_expr ? *maybe_expr : branch.expr;
-			branches.push_back(constr_match::branch{branch.constructor, branch.nargs, expr});
+			branches.push_back(match_branch_t{branch.constructor, branch.nargs, expr});
 		}
 
 		changed = changed || maybe_arg || maybe_restype;
@@ -148,11 +148,11 @@ normalize_rec(const constr& input)
 			return {};
 		}
 	} else if (auto fix = input.as_fix()) {
-		std::vector<fix_group::function> functions;
+		std::vector<fix_function_t> functions;
 
 		bool changed = false;
 		for (const auto& function : fix->group()->functions) {
-			std::vector<formal_arg> args;
+			std::vector<formal_arg_t> args;
 			for (const auto& arg : function.args) {
 				auto maybe_argtype = normalize_rec(arg.type);
 				changed = changed || maybe_argtype;
@@ -166,11 +166,11 @@ normalize_rec(const constr& input)
 			const auto& body = maybe_body ? *maybe_body : function.body;
 			changed = changed || maybe_restype || maybe_body;
 
-			functions.push_back(fix_group::function{function.name, std::move(args), restype, body});
+			functions.push_back(fix_function_t{function.name, std::move(args), restype, body});
 		}
-		std::shared_ptr<fix_group> new_group;
+		std::shared_ptr<fix_group_t> new_group;
 		if (changed) {
-			new_group = std::make_shared<fix_group>();
+			new_group = std::make_shared<fix_group_t>();
 			new_group->functions = std::move(functions);
 		}
 

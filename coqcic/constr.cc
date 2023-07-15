@@ -312,7 +312,7 @@ constr_product::~constr_product()
 }
 
 constr_product::constr_product(
-	std::vector<formal_arg> args,
+	std::vector<formal_arg_t> args,
 	constr restype)
 	: args_(std::move(args))
 	, restype_(std::move(restype))
@@ -374,7 +374,7 @@ constr_product::check(const type_context& ctx) const
 constr
 constr_product::shift(std::size_t limit, int dir) const
 {
-	std::vector<formal_arg> args;
+	std::vector<formal_arg_t> args;
 	bool change = false;
 
 	for (const auto& arg : args_) {
@@ -402,7 +402,7 @@ constr_lambda::~constr_lambda()
 }
 
 constr_lambda::constr_lambda(
-	std::vector<formal_arg> args,
+	std::vector<formal_arg_t> args,
 	constr body)
 	: args_(std::move(args))
 	, body_(std::move(body))
@@ -451,7 +451,7 @@ constr_lambda::check(const type_context& ctx) const
 constr
 constr_lambda::shift(std::size_t limit, int dir) const
 {
-	std::vector<formal_arg> args;
+	std::vector<formal_arg_t> args;
 	bool change = false;
 
 	for (const auto& arg : args_) {
@@ -573,7 +573,7 @@ constr
 constr_apply::check(const type_context& ctx) const
 {
 	auto fntype = fn_.check(ctx);
-	std::vector<formal_arg> prod_args;
+	std::vector<formal_arg_t> prod_args;
 
 	for (;;) {
 		auto product = fntype.as_product();
@@ -588,7 +588,7 @@ constr_apply::check(const type_context& ctx) const
 
 	std::size_t nsubst = args().size();
 
-	std::vector<formal_arg> residual_formal_args(prod_args.begin() + nsubst, prod_args.end());
+	std::vector<formal_arg_t> residual_formal_args(prod_args.begin() + nsubst, prod_args.end());
 
 	constr restype =
 		residual_formal_args.empty() ?
@@ -606,7 +606,7 @@ constr_apply::simpl() const
 {
 	if (auto fnlambda = dynamic_cast<const constr_lambda*>(fn_.repr().get())) {
 		std::size_t nsubst = std::min(args().size(), fnlambda->args().size());
-		std::vector<formal_arg> residual_formal_args(fnlambda->args().begin() + nsubst, fnlambda->args().end());
+		std::vector<formal_arg_t> residual_formal_args(fnlambda->args().begin() + nsubst, fnlambda->args().end());
 		constr resfn =
 			residual_formal_args.empty() ?
 			fnlambda->body() : builder::lambda(std::move(residual_formal_args), fnlambda->body());
@@ -724,7 +724,7 @@ constr_match::~constr_match()
 {
 }
 
-constr_match::constr_match(constr restype, constr arg, std::vector<branch> branches)
+constr_match::constr_match(constr restype, constr arg, std::vector<match_branch_t> branches)
 	: restype_(std::move(restype))
 	, arg_(std::move(arg))
 	, branches_(std::move(branches))
@@ -778,11 +778,11 @@ constr_match::shift(std::size_t limit, int dir) const
 	auto arg = arg_.shift(limit, dir);
 	diff = diff || arg.repr() != arg_.repr();
 
-	std::vector<branch> branches;
+	std::vector<match_branch_t> branches;
 	for (const auto& b : branches_) {
 		auto expr = b.expr.shift(limit, dir);
 		diff = diff || expr.repr() != b.expr.repr();
-		branches.push_back(branch { b.constructor, b.nargs, expr });
+		branches.push_back(match_branch_t { b.constructor, b.nargs, expr });
 	}
 
 	if (diff) {
@@ -799,7 +799,7 @@ constr_fix::~constr_fix()
 {
 }
 
-constr_fix::constr_fix(std::size_t index, std::shared_ptr<const fix_group> group)
+constr_fix::constr_fix(std::size_t index, std::shared_ptr<const fix_group_t> group)
 	: index_(index), group_(std::move(group))
 {
 }
@@ -856,10 +856,10 @@ constr
 constr_fix::shift(std::size_t limit, int dir) const
 {
 	bool changed = false;
-	fix_group new_group;
+	fix_group_t new_group;
 	limit += group_->functions.size();
 	for (const auto& fn : group_->functions) {
-		fix_group::function new_fn;
+		fix_function_t new_fn;
 		std::size_t add_index = 0;
 		for (const auto& arg : fn.args) {
 			auto new_arg = arg.type.shift(limit + add_index, dir);
@@ -875,7 +875,7 @@ constr_fix::shift(std::size_t limit, int dir) const
 	}
 
 	if (changed) {
-		std::shared_ptr<const fix_group> group = std::make_shared<fix_group>(std::move(new_group));
+		std::shared_ptr<const fix_group_t> group = std::make_shared<fix_group_t>(std::move(new_group));
 		return constr(std::make_shared<constr_fix>(index_, std::move(group)));
 	} else {
 		return constr(shared_from_this());
@@ -921,13 +921,13 @@ builtin_type()
 }
 
 constr
-product(std::vector<formal_arg> args, constr restype)
+product(std::vector<formal_arg_t> args, constr restype)
 {
 	return constr(std::make_shared<constr_product>(std::move(args), std::move(restype)));
 }
 
 constr
-lambda(std::vector<formal_arg> args, constr body)
+lambda(std::vector<formal_arg_t> args, constr body)
 {
 	return constr(std::make_shared<constr_lambda>(std::move(args), std::move(body)));
 }
@@ -952,13 +952,13 @@ cast(constr term, constr_cast::kind_type kind, constr typeterm)
 
 
 constr
-match(constr restype, constr arg, std::vector<constr_match::branch> branches)
+match(constr restype, constr arg, std::vector<match_branch_t> branches)
 {
 	return constr(std::make_shared<constr_match>(std::move(restype), std::move(arg), std::move(branches)));
 }
 
 constr
-fix(std::size_t index, std::shared_ptr<const fix_group> group)
+fix(std::size_t index, std::shared_ptr<const fix_group_t> group)
 {
 	return constr(std::make_shared<constr_fix>(index, std::move(group)));
 }

@@ -208,7 +208,7 @@ vec_move_app(std::vector<std::size_t>& dst, std::vector<std::size_t>& src)
 
 std::optional<fix_spec_info>
 compute_fix_specialization_closure(
-	const fix_group& group,
+	const fix_group_t& group,
 	std::size_t fn_index,
 	std::vector<std::optional<std::size_t>> seed_arg)
 {
@@ -339,9 +339,9 @@ private:
 
 }  // namespace
 
-fix_group
+fix_group_t
 apply_fix_specialization(
-	const fix_group& group,
+	const fix_group_t& group,
 	const fix_spec_info& info,
 	const std::vector<constr>& spec_args,
 	const std::function<std::string(std::size_t)>& namegen)
@@ -375,7 +375,7 @@ apply_fix_specialization(
 		fix_locals = fix_locals.push(replace_subst{std::move(expr)});
 	}
 
-	fix_group new_group;
+	fix_group_t new_group;
 
 	// Now convert all function expressions in the group.
 	for (std::size_t fn_index = 0; fn_index < group.functions.size(); ++fn_index) {
@@ -384,14 +384,14 @@ apply_fix_specialization(
 		std::size_t depth = 0;
 		std::size_t extra_shift = 0;
 
-		std::vector<formal_arg> args;
+		std::vector<formal_arg_t> args;
 		for (std::size_t i = 0; i < fn.args.size(); ++i) {
 			if (info.functions[fn_index].spec_args[i]) {
 				locals = locals.push(replace_subst{spec_args[*info.functions[fn_index].spec_args[i]]});
 				extra_shift += 1;
 			} else {
 				auto argtype = visit_transform_simple<specialize_visitor>(fn.restype, depth, extra_shift, locals);
-				args.insert(args.end(), formal_arg{fn.args[i].name, argtype});
+				args.insert(args.end(), formal_arg_t{fn.args[i].name, argtype});
 				locals = locals.push(replace_shift{extra_shift});
 				depth += 1;
 			}
@@ -401,7 +401,7 @@ apply_fix_specialization(
 
 		auto body = visit_transform_simple<specialize_visitor>(fn.body, depth, extra_shift, locals);
 		new_group.functions.push_back(
-			fix_group::function{
+			fix_function_t{
 				namegen(fn_index),
 				std::move(args),
 				std::move(restype),

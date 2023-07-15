@@ -11,7 +11,7 @@ TEST(CICFixSpecTest, list_reverse)
 	//
 	// First, we establish that we can consistently specialize this fixpoint
 	// group on its first argument.
-	coqcic::fix_group grp{
+	coqcic::fix_group_t grp{
 		{
 			{
 				"rev",
@@ -54,7 +54,7 @@ TEST(CICFixSpecTest, list_reverse)
 	auto new_grp = apply_fix_specialization(
 		grp, *spec, {global("nat")}, [](std::size_t) -> std::string { return std::string("rev_nat"); });
 
-	coqcic::fix_group expect_grp{
+	coqcic::fix_group_t expect_grp{
 		{
 			{
 				"rev_nat",

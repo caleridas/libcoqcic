@@ -69,7 +69,7 @@ match_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<constr_match::branch>
+from_sexpr_result<match_branch_t>
 branch_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
@@ -89,7 +89,7 @@ branch_from_sexpr(const sexpr& e)
 			if (!expr) {
 				return expr.error();
 			}
-			return constr_match::branch {consname.move_value(), nargs.move_value(), expr.move_value() };
+			return match_branch_t {consname.move_value(), nargs.move_value(), expr.move_value() };
 		} else {
 			return from_sexpr_error {"Unable to parse branch", &e};
 		}
@@ -98,14 +98,14 @@ branch_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<std::vector<constr_match::branch>>
+from_sexpr_result<std::vector<match_branch_t>>
 branches_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
 		auto kind = c->kind();
 		auto args = c->args();
 		if (kind == "Branches") {
-			std::vector<constr_match::branch> branches;
+			std::vector<match_branch_t> branches;
 			for (const auto& arg : args) {
 				auto branch = branch_from_sexpr(arg);
 				if (!branch) {
@@ -122,7 +122,7 @@ branches_from_sexpr(const sexpr& e)
 	}
 }
 
-from_sexpr_result<fix_group::function>
+from_sexpr_result<fix_function_t>
 fixfunction_from_sexpr(const sexpr& e)
 {
 	if (auto c = e.as_compound()) {
@@ -149,7 +149,7 @@ fixfunction_from_sexpr(const sexpr& e)
 			auto sigtype = sigtype_parsed.move_value();
 			auto fndef = fndef_parsed.move_value();
 
-			std::vector<formal_arg> args;
+			std::vector<formal_arg_t> args;
 			for (;;) {
 				auto sigtype_prod = sigtype.as_product();
 				auto fndef_lambda = fndef.as_lambda();
@@ -161,8 +161,8 @@ fixfunction_from_sexpr(const sexpr& e)
 				std::size_t count = std::min(sigtype_prod->args().size(), fndef_lambda->args().size());
 				args.insert(args.end(), fndef_lambda->args().begin(), fndef_lambda->args().begin() + count);
 
-				std::vector<formal_arg> new_prod_args(sigtype_prod->args().begin() + count, sigtype_prod->args().end());
-				std::vector<formal_arg> new_fndef_args(fndef_lambda->args().begin() + count, fndef_lambda->args().end());
+				std::vector<formal_arg_t> new_prod_args(sigtype_prod->args().begin() + count, sigtype_prod->args().end());
+				std::vector<formal_arg_t> new_fndef_args(fndef_lambda->args().begin() + count, fndef_lambda->args().end());
 
 				if (!new_prod_args.empty()) {
 					sigtype = builder::product(std::move(new_prod_args), sigtype_prod->restype());
@@ -177,7 +177,7 @@ fixfunction_from_sexpr(const sexpr& e)
 				}
 			}
 
-			return fix_group::function{std::move(realname), std::move(args), std::move(sigtype), std::move(fndef)};
+			return fix_function_t{std::move(realname), std::move(args), std::move(sigtype), std::move(fndef)};
 		} else {
 			return from_sexpr_error {"Unable to parse fixfunction", &e};
 		}
@@ -189,7 +189,7 @@ fixfunction_from_sexpr(const sexpr& e)
 }  // namespace
 
 from_sexpr_result<sfb>
-sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group>& last_fix);
+sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix);
 
 from_sexpr_result<constr>
 constr_from_sexpr(const sexpr& e)
@@ -363,7 +363,7 @@ constr_from_sexpr(const sexpr& e)
 			if (!index) {
 				return index.error();
 			}
-			std::vector<fix_group::function> fns;
+			std::vector<fix_function_t> fns;
 			for (std::size_t n = 1; n < args.size(); ++n) {
 				const auto& arg = args[n];
 				auto fixfn = fixfunction_from_sexpr(arg);
@@ -373,7 +373,7 @@ constr_from_sexpr(const sexpr& e)
 				fns.push_back(fixfn.move_value());
 			}
 
-			return builder::fix(index.move_value(), std::make_shared<fix_group>(fix_group{std::move(fns)}));
+			return builder::fix(index.move_value(), std::make_shared<fix_group_t>(fix_group_t{std::move(fns)}));
 		} else {
 			return from_sexpr_error {"Unhandled kind of constr:" + kind, &e};
 		}
@@ -540,7 +540,7 @@ modsig_from_sexpr(const sexpr& e)
 		const auto& args = c->args();
 
 		if (kind == "Body") {
-			std::shared_ptr<const fix_group> last_fix;
+			std::shared_ptr<const fix_group_t> last_fix;
 			std::pair<mod_functor_args_t, std::vector<sfb>> result;
 			for (const auto& arg : args) {
 				auto sfb = sfb_from_sexpr(arg, last_fix);
@@ -653,7 +653,7 @@ module_body_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<sfb>
-sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group>& last_fix)
+sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix)
 {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
@@ -771,7 +771,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group>& last_fix)
 from_sexpr_result<sfb>
 sfb_from_sexpr(const sexpr& e)
 {
-	std::shared_ptr<const fix_group> tmp;
+	std::shared_ptr<const fix_group_t> tmp;
 	return sfb_from_sexpr(e, tmp);
 }
 

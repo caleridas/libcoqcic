@@ -38,13 +38,13 @@ transform_visitor::handle_builtin(const std::string& name)
 }
 
 std::optional<constr>
-transform_visitor::handle_product(const std::vector<formal_arg>& args, const constr& restype)
+transform_visitor::handle_product(const std::vector<formal_arg_t>& args, const constr& restype)
 {
 	return {};
 }
 
 std::optional<constr>
-transform_visitor::handle_lambda(const std::vector<formal_arg>& args, const constr& body)
+transform_visitor::handle_lambda(const std::vector<formal_arg_t>& args, const constr& body)
 {
 	return {};
 }
@@ -68,13 +68,13 @@ transform_visitor::handle_cast(const constr& term, const constr_cast::kind_type 
 }
 
 std::optional<constr>
-transform_visitor::handle_case(const constr& argtype, const constr& restype, const std::vector<constr_match::branch>& branches)
+transform_visitor::handle_case(const constr& argtype, const constr& restype, const std::vector<match_branch_t>& branches)
 {
 	return {};
 }
 
 std::optional<constr>
-transform_visitor::handle_fix(std::size_t index, const std::shared_ptr<const fix_group>& group)
+transform_visitor::handle_fix(std::size_t index, const std::shared_ptr<const fix_group_t>& group)
 {
 	return {};
 }
@@ -91,12 +91,12 @@ visit_transform(
 	} else if (auto builtin = input.as_builtin()) {
 		return visitor.handle_builtin(builtin->name());
 	} else if (auto product = input.as_product()) {
-		std::vector<formal_arg> args;
+		std::vector<formal_arg_t> args;
 		bool changed = false;
 		for (const auto& arg : product->args()) {
 			auto maybe_argtype = visit_transform(arg.type, visitor);
 			changed = changed || maybe_argtype;
-			args.push_back(maybe_argtype ? formal_arg{arg.name, *maybe_argtype} : arg);
+			args.push_back(maybe_argtype ? formal_arg_t{arg.name, *maybe_argtype} : arg);
 
 			visitor.push_local(arg.name ? &*arg.name : nullptr, &arg.type, nullptr);
 		}
@@ -118,12 +118,12 @@ visit_transform(
 			return {};
 		}
 	} else if (auto lambda = input.as_lambda()) {
-		std::vector<formal_arg> args;
+		std::vector<formal_arg_t> args;
 		bool changed = false;
 		for (const auto& arg : lambda->args()) {
 			auto maybe_argtype = visit_transform(arg.type, visitor);
 			changed = changed || maybe_argtype;
-			args.push_back(maybe_argtype ? formal_arg{arg.name, *maybe_argtype} : arg);
+			args.push_back(maybe_argtype ? formal_arg_t{arg.name, *maybe_argtype} : arg);
 
 			visitor.push_local(arg.name ? &*arg.name : nullptr, &arg.type, nullptr);
 		}
@@ -214,7 +214,7 @@ visit_transform(
 		visitor.pop_local();
 
 		bool changed = false;
-		std::vector<constr_match::branch> branches;
+		std::vector<match_branch_t> branches;
 		for (const auto& branch : match_case->branches()) {
 			for (std::size_t n = 0; n < branch.nargs; ++n) {
 				visitor.push_local(nullptr, nullptr, nullptr);
@@ -225,7 +225,7 @@ visit_transform(
 			}
 			changed = changed || maybe_expr;
 			const auto& expr = maybe_expr ? *maybe_expr : branch.expr;
-			branches.push_back(constr_match::branch{branch.constructor, branch.nargs, expr});
+			branches.push_back(match_branch_t{branch.constructor, branch.nargs, expr});
 		}
 
 		changed = changed || maybe_arg || maybe_restype;
@@ -239,7 +239,7 @@ visit_transform(
 			return {};
 		}
 	} else if (auto fix = input.as_fix()) {
-		std::vector<fix_group::function> functions;
+		std::vector<fix_function_t> functions;
 		for (const auto& function : fix->group()->functions) {
 			// XXX: product at least correct signature for this function
 			visitor.push_local(&function.name, nullptr, nullptr);
@@ -247,7 +247,7 @@ visit_transform(
 
 		bool changed = false;
 		for (const auto& function : fix->group()->functions) {
-			std::vector<formal_arg> args;
+			std::vector<formal_arg_t> args;
 			for (const auto& arg : function.args) {
 				auto maybe_argtype = visit_transform(arg.type, visitor);
 				changed = changed || maybe_argtype;
@@ -262,7 +262,7 @@ visit_transform(
 			const auto& body = maybe_body ? *maybe_body : function.body;
 			changed = changed || maybe_restype || maybe_body;
 
-			functions.push_back(fix_group::function{function.name, std::move(args), restype, body});
+			functions.push_back(fix_function_t{function.name, std::move(args), restype, body});
 			for (const auto& arg : function.args) {
 				(void) arg;
 				visitor.pop_local();
@@ -272,9 +272,9 @@ visit_transform(
 			(void) function;
 			visitor.pop_local();
 		}
-		std::shared_ptr<fix_group> new_group;
+		std::shared_ptr<fix_group_t> new_group;
 		if (changed) {
-			new_group = std::make_shared<fix_group>();
+			new_group = std::make_shared<fix_group_t>();
 			new_group->functions = std::move(functions);
 		}
 
