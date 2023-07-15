@@ -68,7 +68,7 @@ transform_visitor::handle_cast(const constr_t& term, const constr_cast::kind_typ
 }
 
 std::optional<constr_t>
-transform_visitor::handle_case(const constr_t& argtype, const constr_t& restype, const std::vector<match_branch_t>& branches)
+transform_visitor::handle_match(const constr_t& argtype, const constr_t& restype, const std::vector<match_branch_t>& branches)
 {
 	return {};
 }
@@ -230,7 +230,7 @@ visit_transform(
 
 		changed = changed || maybe_arg || maybe_restype;
 
-		auto result = visitor.handle_case(restype, arg, branches);
+		auto result = visitor.handle_match(restype, arg, branches);
 		if (result) {
 			return result;
 		} else if (changed) {
