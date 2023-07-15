@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 
 using coqcic::constr;
-using coqcic::type_context;
+using coqcic::type_context_t;
 using namespace coqcic::builder;
 
 namespace {
@@ -59,7 +59,7 @@ lookup_global(const globals& globals, const std::string& name)
 TEST(CICTest, simple_check)
 {
 	auto globals = build_globals();
-	type_context ctx;
+	type_context_t ctx;
 	ctx.global_types = [globals](const std::string& name) { return lookup_global(globals, name); };
 
 	{
@@ -78,7 +78,7 @@ TEST(CICTest, simple_check)
 TEST(CICTest, dup_pair)
 {
 	auto globals = build_globals();
-	type_context ctx;
+	type_context_t ctx;
 	ctx.global_types = [globals](const std::string& name) { return lookup_global(globals, name); };
 
 	auto dup_pair = lambda(

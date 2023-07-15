@@ -28,7 +28,7 @@ class constr_cast;
 class constr_match;
 class constr_fix;
 
-class type_context;
+class type_context_t;
 
 // A CIC constr, represented as one of the representation
 // classes above.
@@ -66,7 +66,7 @@ public:
 	bool operator!=(const constr& other) const { return ! (*this == other); }
 
 	constr
-	check(const type_context& ctx) const;
+	check(const type_context_t& ctx) const;
 
 	constr
 	simpl() const;
@@ -180,9 +180,10 @@ struct fix_group_t {
 std::vector<std::size_t>
 collect_external_references(const constr& obj);
 
-class type_context {
+// Context for type checking operation on constr objects.
+class type_context_t {
 public:
-	type_context push_local(std::string name, constr type) const;
+	type_context_t push_local(std::string name, constr type) const;
 
 	struct local_entry {
 		std::string name;
@@ -210,7 +211,7 @@ public:
 
 	virtual
 	constr
-	check(const type_context& ctx) const = 0;
+	check(const type_context_t& ctx) const = 0;
 
 	virtual
 	constr
@@ -239,7 +240,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	constr
 	shift(std::size_t limit, int dir) const override;
@@ -272,7 +273,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	inline
 	const std::string&
@@ -297,7 +298,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	inline
 	const std::string&
@@ -337,7 +338,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	constr
 	shift(std::size_t limit, int dir) const override;
@@ -368,7 +369,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	constr
 	shift(std::size_t limit, int dir) const override;
@@ -403,7 +404,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	constr
 	shift(std::size_t limit, int dir) const override;
@@ -439,7 +440,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	constr
 	simpl() const override;
@@ -480,7 +481,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	constr
 	shift(std::size_t limit, int dir) const override;
@@ -516,7 +517,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	constr
 	shift(std::size_t limit, int dir) const override;
@@ -559,7 +560,7 @@ public:
 	operator==(const constr_base& other) const noexcept override;
 
 	constr
-	check(const type_context& ctx) const override;
+	check(const type_context_t& ctx) const override;
 
 	constr
 	shift(std::size_t limit, int dir) const override;

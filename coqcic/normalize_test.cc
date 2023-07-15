@@ -19,7 +19,7 @@ TEST(Normalize, lambda_apply)
 
 	EXPECT_EQ(n, e);
 
-	coqcic::type_context ctx;
+	coqcic::type_context_t ctx;
 	ctx.global_types = [](const std::string& sym) {
 		if (sym == "plus") {
 			return product({{"_", global("nat")}}, product({{"_", global("nat")}}, global("nat")));

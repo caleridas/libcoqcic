@@ -24,7 +24,7 @@ constr::operator==(const constr& other) const
 }
 
 constr
-constr::check(const type_context& ctx) const
+constr::check(const type_context_t& ctx) const
 {
 	return repr_->check(ctx);
 }
@@ -103,12 +103,12 @@ collect_external_references(const constr& obj)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// type_context
+// type_context_t
 
-type_context
-type_context::push_local(std::string name, constr type) const
+type_context_t
+type_context_t::push_local(std::string name, constr type) const
 {
-	type_context new_ctx(*this);
+	type_context_t new_ctx(*this);
 	new_ctx.locals = locals.push(local_entry{std::move(name), std::move(type)});
 	return new_ctx;
 }
@@ -174,7 +174,7 @@ constr_local::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_local::check(const type_context& ctx) const
+constr_local::check(const type_context_t& ctx) const
 {
 	return ctx.locals.at(index_).type;
 }
@@ -222,7 +222,7 @@ constr_global::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_global::check(const type_context& ctx) const
+constr_global::check(const type_context_t& ctx) const
 {
 	return ctx.global_types(name_);
 }
@@ -255,7 +255,7 @@ constr_builtin::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_builtin::check(const type_context& ctx) const
+constr_builtin::check(const type_context_t& ctx) const
 {
 	return check_(*this);
 }
@@ -348,9 +348,9 @@ constr_product::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_product::check(const type_context& ctx) const
+constr_product::check(const type_context_t& ctx) const
 {
-	type_context new_ctx = ctx;
+	type_context_t new_ctx = ctx;
 	std::optional<constr> expr_type;
 	for (const auto& arg : args_) {
 		auto t = arg.type.check(new_ctx);
@@ -438,11 +438,11 @@ constr_lambda::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_lambda::check(const type_context& ctx) const
+constr_lambda::check(const type_context_t& ctx) const
 {
-	type_context new_ctx = ctx;
+	type_context_t new_ctx = ctx;
 	for (const auto& arg : args_) {
-		type_context new_ctx = ctx.push_local(arg.name ? *arg.name : "_", arg.type);
+		type_context_t new_ctx = ctx.push_local(arg.name ? *arg.name : "_", arg.type);
 	}
 	auto restype = body_.check(new_ctx);
 	return constr(std::make_shared<constr_product>(args(), std::move(restype)));
@@ -514,9 +514,9 @@ constr_let::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_let::check(const type_context& ctx) const
+constr_let::check(const type_context_t& ctx) const
 {
-	type_context new_ctx = ctx.push_local(varname_ ? *varname_ : "_", value_.check(ctx));
+	type_context_t new_ctx = ctx.push_local(varname_ ? *varname_ : "_", value_.check(ctx));
 	return body_.check(new_ctx);
 }
 
@@ -570,7 +570,7 @@ constr_apply::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_apply::check(const type_context& ctx) const
+constr_apply::check(const type_context_t& ctx) const
 {
 	auto fntype = fn_.check(ctx);
 	std::vector<formal_arg_t> prod_args;
@@ -700,7 +700,7 @@ constr_cast::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_cast::check(const type_context& ctx) const
+constr_cast::check(const type_context_t& ctx) const
 {
 	return term_.check(ctx);
 }
@@ -762,7 +762,7 @@ constr_match::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_match::check(const type_context& ctx) const
+constr_match::check(const type_context_t& ctx) const
 {
 	auto argtype = arg_.check(ctx);
 	return local_subst(restype_, 0, {argtype});
@@ -846,7 +846,7 @@ constr_fix::operator==(const constr_base& other) const noexcept
 }
 
 constr
-constr_fix::check(const type_context& ctx) const
+constr_fix::check(const type_context_t& ctx) const
 {
 	const auto& fn = group_->functions[index_];
 	return builder::product(fn.args, fn.restype);
