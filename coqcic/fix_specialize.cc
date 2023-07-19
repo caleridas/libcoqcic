@@ -20,7 +20,7 @@ struct sym_spec_arg {
 struct sym_none {};
 
 using sym = std::variant<sym_fix_function, sym_spec_arg, sym_none>;
-using sym_stack = shared_stack<sym>;
+using sym_stack = lazy_stack<sym>;
 
 inline std::ostream&
 operator<<(std::ostream& os, const sym& s)
@@ -269,7 +269,7 @@ struct replace_subst {
 };
 
 using replace = std::variant<replace_shift, replace_subst>;
-using replace_stack = shared_stack<replace>;
+using replace_stack = lazy_stack<replace>;
 
 class specialize_visitor final : public transform_visitor {
 public:

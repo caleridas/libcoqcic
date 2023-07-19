@@ -8,7 +8,7 @@ namespace {
 
 template<typename T>
 std::vector<T>
-to_vec(const shared_stack<T>& stack)
+to_vec(const lazy_stack<T>& stack)
 {
 	std::vector<T> result;
 	std::size_t size = stack.size();

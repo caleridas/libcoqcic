@@ -16,22 +16,24 @@ libcoqcic_HEADERS = \
 	coqcic/constr.h \
 	coqcic/fix_specialize.h \
 	coqcic/from_sexpr.h \
+	coqcic/lazy_stack.h \
+	coqcic/lazy_stackmap.h \
 	coqcic/normalize.h \
 	coqcic/parse_result.h \
 	coqcic/parse_sexpr.h \
 	coqcic/sfb.h \
 	coqcic/simpl.h \
 	coqcic/visitor.h \
-	coqcic/shared_stack.h \
 	coqcic/sexpr.h \
 
 libcoqcic_TESTS = \
 	coqcic/constr_test \
 	coqcic/from_sexpr_test \
 	coqcic/fix_specialize_test \
+	coqcic/lazy_stack_test \
+	coqcic/lazy_stackmap_test \
 	coqcic/normalize_test \
 	coqcic/parse_sexpr_test \
-	coqcic/shared_stack_test \
 	coqcic/simpl_test \
 
 libcoqcic_VERSION = 0.0.1

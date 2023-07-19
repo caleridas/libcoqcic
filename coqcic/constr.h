@@ -9,7 +9,7 @@
 #include <variant>
 #include <vector>
 
-#include "coqcic/shared_stack.h"
+#include "coqcic/lazy_stack.h"
 
 namespace coqcic {
 
@@ -190,7 +190,7 @@ public:
 		constr_t type;
 	};
 
-	shared_stack<local_entry> locals;
+	lazy_stack<local_entry> locals;
 
 	// Map constr_global name to its type
 	std::function<constr_t(const std::string&)> global_types;

@@ -1,5 +1,5 @@
-#ifndef COQCIC_SHARED_STACK_H
-#define COQCIC_SHARED_STACK_H
+#ifndef COQCIC_LAZY_STACK_H
+#define COQCIC_LAZY_STACK_H
 
 // "Functional" stack data structure
 //
@@ -15,16 +15,16 @@
 namespace coqcic {
 
 template<typename T>
-struct shared_stack_repr {
+struct lazy_stack_repr {
 	std::vector<T> items;
-	std::shared_ptr<shared_stack_repr<T>> next;
+	std::shared_ptr<lazy_stack_repr<T>> next;
 };
 
 template<typename T>
-class shared_stack {
+class lazy_stack {
 public:
 	inline
-	shared_stack() noexcept = default;
+	lazy_stack() noexcept = default;
 
 	inline
 	std::size_t
@@ -35,11 +35,11 @@ public:
 	empty() const noexcept;
 
 	inline
-	shared_stack<T>
+	lazy_stack<T>
 	push(T t) const;
 
 	inline
-	shared_stack<T>
+	lazy_stack<T>
 	pop() const;
 
 	inline
@@ -55,15 +55,15 @@ public:
 
 private:
 	inline
-	shared_stack(std::shared_ptr<shared_stack_repr<T>> repr) noexcept : repr_(std::move(repr)) {}
+	lazy_stack(std::shared_ptr<lazy_stack_repr<T>> repr) noexcept : repr_(std::move(repr)) {}
 
-	std::shared_ptr<shared_stack_repr<T>> repr_;
+	std::shared_ptr<lazy_stack_repr<T>> repr_;
 };
 
 template<typename T>
 inline
 std::size_t
-shared_stack<T>::size() const noexcept
+lazy_stack<T>::size() const noexcept
 {
 	std::size_t count = 0;
 	auto ptr = repr_.get();
@@ -77,18 +77,18 @@ shared_stack<T>::size() const noexcept
 template<typename T>
 inline
 bool
-shared_stack<T>::empty() const noexcept
+lazy_stack<T>::empty() const noexcept
 {
 	return !repr_;
 }
 
 template<typename T>
 inline
-shared_stack<T>
-shared_stack<T>::push(T t) const
+lazy_stack<T>
+lazy_stack<T>::push(T t) const
 {
 	auto next = repr_;
-	auto repr = std::make_shared<shared_stack_repr<T>>();
+	auto repr = std::make_shared<lazy_stack_repr<T>>();
 	repr->items.push_back(t);
 	while (next && next->items.size() == repr->items.size()) {
 		repr->items.insert(repr->items.end(), next->items.begin(), next->items.end());
@@ -96,17 +96,17 @@ shared_stack<T>::push(T t) const
 	}
 	repr->next = std::move(next);
 
-	return shared_stack(std::move(repr));
+	return lazy_stack(std::move(repr));
 }
 
 template<typename T>
 inline
-shared_stack<T>
-shared_stack<T>::pop() const
+lazy_stack<T>
+lazy_stack<T>::pop() const
 {
 	auto next = repr_->next;
-	std::shared_ptr<shared_stack_repr<T>> repr;
-	std::shared_ptr<shared_stack_repr<T>>* current = &repr;
+	std::shared_ptr<lazy_stack_repr<T>> repr;
+	std::shared_ptr<lazy_stack_repr<T>>* current = &repr;
 	auto i = repr_->items.begin() + 1;
 	auto end = repr_->items.end();
 	std::size_t pow = 1;
@@ -116,7 +116,7 @@ shared_stack<T>::pop() const
 		while ((size & pow) == 0) {
 			pow = pow << 1;
 		}
-		auto tmp = std::make_shared<shared_stack_repr<T>>();
+		auto tmp = std::make_shared<lazy_stack_repr<T>>();
 		tmp->items.insert(tmp->items.begin(), i, i + pow);
 		i += pow;
 		*current = tmp;
@@ -125,13 +125,13 @@ shared_stack<T>::pop() const
 
 	*current = next;
 
-	return shared_stack(std::move(repr));
+	return lazy_stack(std::move(repr));
 }
 
 template<typename T>
 inline
 const T&
-shared_stack<T>::at(std::size_t index) const
+lazy_stack<T>::at(std::size_t index) const
 {
 	auto ptr = repr_.get();
 	while (ptr) {
@@ -149,7 +149,7 @@ shared_stack<T>::at(std::size_t index) const
 template<typename T>
 inline
 const T&
-shared_stack<T>::get(std::size_t index, const T& fallback) const noexcept
+lazy_stack<T>::get(std::size_t index, const T& fallback) const noexcept
 {
 	auto ptr = repr_.get();
 	while (ptr) {
@@ -167,12 +167,12 @@ shared_stack<T>::get(std::size_t index, const T& fallback) const noexcept
 template<typename T>
 inline
 void
-shared_stack<T>::set(std::size_t index, T value)
+lazy_stack<T>::set(std::size_t index, T value)
 {
 	auto pptr = &repr_;
 	while (*pptr) {
 		if (!pptr->unique()) {
-			auto ptr = std::make_shared<shared_stack_repr<T>>(**pptr);
+			auto ptr = std::make_shared<lazy_stack_repr<T>>(**pptr);
 			*pptr = std::move(ptr);
 		}
 		if (index < (*pptr)->items.size()) {

@@ -1,4 +1,4 @@
-#include "coqcic/shared_stack.h"
+#include "coqcic/lazy_stack.h"
 
 #include "gtest/gtest.h"
 
@@ -8,7 +8,7 @@ namespace {
 
 template<typename T>
 std::vector<T>
-to_vec(const shared_stack<T>& stack)
+to_vec(const lazy_stack<T>& stack)
 {
 	std::vector<T> result;
 	std::size_t size = stack.size();
@@ -21,9 +21,9 @@ to_vec(const shared_stack<T>& stack)
 
 }  // namespace
 
-TEST(SharedStack, small)
+TEST(LazyStack, small)
 {
-	using stack_type = shared_stack<int>;
+	using stack_type = lazy_stack<int>;
 
 	stack_type s0;
 
@@ -41,9 +41,9 @@ TEST(SharedStack, small)
 	EXPECT_EQ(1, s2.at(1));
 }
 
-TEST(SharedStack, push_pop)
+TEST(LazyStack, push_pop)
 {
-	using stack_type = shared_stack<int>;
+	using stack_type = lazy_stack<int>;
 	using vec_type = std::vector<int>;
 
 	stack_type s;
@@ -65,9 +65,9 @@ TEST(SharedStack, push_pop)
 }
 
 
-TEST(SharedStack, large)
+TEST(LazyStack, large)
 {
-	using stack_type = shared_stack<int>;
+	using stack_type = lazy_stack<int>;
 
 	stack_type s;
 
@@ -80,9 +80,9 @@ TEST(SharedStack, large)
 	}
 }
 
-TEST(SharedStack, assign)
+TEST(LazyStack, assign)
 {
-	using stack_type = shared_stack<int>;
+	using stack_type = lazy_stack<int>;
 
 	stack_type s;
 	s = s.push(1);
