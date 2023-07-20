@@ -1,3 +1,9 @@
+libcoqcic (0.0.2) UNRELEASED; urgency=medium
+
+  * Rework external API
+
+ -- Helge Bahmann <hcb@chaoticmind.net>  Thu, 20 Jul 2023 22:10:00 +0200
+
 libcoqcic (0.0.1) UNRELEASED; urgency=medium
 
   * Initial release.

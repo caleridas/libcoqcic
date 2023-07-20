@@ -36,7 +36,7 @@ libcoqcic_TESTS = \
 	coqcic/parse_sexpr_test \
 	coqcic/simpl_test \
 
-libcoqcic_VERSION = 0.0.1
+libcoqcic_VERSION = 0.0.2
 libcoqcic_SOVERSION = 0
 
 PKGCONFIG_FILES += libcoqcic.pc
