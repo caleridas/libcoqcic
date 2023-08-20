@@ -14,6 +14,7 @@ class sfb_base;
 class sfb_inductive;
 class sfb_definition;
 class sfb_axiom;
+class sfb_fixpoint;
 class sfb_module;
 class sfb_module_type;
 
@@ -71,6 +72,7 @@ public:
 
 	inline const sfb_definition* as_definition() const noexcept;
 	inline const sfb_axiom* as_axiom() const noexcept;
+	inline const sfb_fixpoint* as_fixpoint() const noexcept;
 	inline const sfb_inductive* as_inductive() const noexcept;
 	inline const sfb_module* as_module() const noexcept;
 	inline const sfb_module_type* as_module_type() const noexcept;
@@ -199,8 +201,8 @@ public:
 
 	bool
 	operator==(const sfb_base& other) const noexcept override;
-	inline const std::string&
 
+	inline const std::string&
 	id() const noexcept
 	{
 		return id_;
@@ -215,6 +217,32 @@ public:
 private:
 	std::string id_;
 	constr_t type_;
+};
+
+class sfb_fixpoint final : public sfb_base {
+public:
+	~sfb_fixpoint() override;
+
+	inline explicit
+	sfb_fixpoint(fix_group_t fix_group) noexcept
+		: fix_group_(std::move(fix_group))
+	{
+	}
+
+	void
+	format(std::string& out) const override;
+
+	bool
+	operator==(const sfb_base& other) const noexcept override;
+
+	inline const fix_group_t&
+	fix_group() const noexcept
+	{
+		return fix_group_;
+	}
+
+private:
+	fix_group_t fix_group_;
 };
 
 class sfb_inductive final : public sfb_base {
@@ -461,6 +489,12 @@ sfb_t::as_axiom() const noexcept
 	return dynamic_cast<const sfb_axiom*>(repr_.get());
 }
 
+inline const sfb_fixpoint*
+sfb_t::as_fixpoint() const noexcept
+{
+	return dynamic_cast<const sfb_fixpoint*>(repr_.get());
+}
+
 inline const sfb_inductive*
 sfb_t::as_inductive() const noexcept
 {
@@ -487,6 +521,8 @@ sfb_t::visit(Visitor&& vis)
 		return vis(*def);
 	} else if (auto axiom = as_axiom()) {
 		return vis(*axiom);
+	} else if (auto fixpoint = as_fixpoint()) {
+		return vis(*fixpoint);
 	} else if (auto inductive = as_inductive()) {
 		return vis(*inductive);
 	} else if (auto module_def = as_module()) {
@@ -508,6 +544,9 @@ axiom(std::string id, constr_t type);
 
 sfb_t
 inductive(std::vector<one_inductive_t> one_inductives);
+
+sfb_t
+fixpoint(fix_group_t fix_group);
 
 sfb_t
 module_def(std::string id, module_body body);

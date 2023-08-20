@@ -92,6 +92,51 @@ sfb_axiom::operator==(const sfb_base& other) const noexcept
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// sfb_fixpoint
+
+sfb_fixpoint::~sfb_fixpoint()
+{
+}
+
+void
+sfb_fixpoint::format(std::string& out) const
+{
+	bool first = true;
+	for (const auto& fn : fix_group_.functions) {
+		if (first) {
+			out += "Fixpoint ";
+		} else {
+			out += "\nwith ";
+		}
+		first = false;
+		out += fn.name;
+		out += " ";
+		for (const auto& arg : fn.args) {
+			out += "(";
+			out += arg.name ? *arg.name : "_";
+			out += " : ";
+			arg.type.format(out);
+			out += ") ";
+		}
+		out += ": ";
+		fn.restype.format(out);
+		out += " := ";
+		fn.body.format(out);
+	}
+	out += ".";
+}
+
+bool
+sfb_fixpoint::operator==(const sfb_base& other) const noexcept
+{
+	if (auto f = dynamic_cast<const sfb_fixpoint*>(&other)) {
+		return fix_group_ == f->fix_group_;
+	} else {
+		return false;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // sfb_inductive
 
 sfb_inductive::~sfb_inductive()
@@ -303,6 +348,12 @@ sfb_t
 inductive(std::vector<one_inductive_t> one_inductives)
 {
 	return sfb_t(std::make_shared<sfb_inductive>(std::move(one_inductives)));
+}
+
+sfb_t
+fixpoint(fix_group_t fix_group)
+{
+	return sfb_t(std::make_shared<sfb_fixpoint>(std::move(fix_group)));
 }
 
 sfb_t
