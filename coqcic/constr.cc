@@ -665,18 +665,18 @@ constr_match::~constr_match() {
 }
 
 constr_match::constr_match(
-	constr_t restype,
+	constr_t casetype,
 	constr_t arg,
 	std::vector<match_branch_t> branches
-) : restype_(std::move(restype)), arg_(std::move(arg)), branches_(std::move(branches)) {
+) : casetype_(std::move(casetype)), arg_(std::move(arg)), branches_(std::move(branches)) {
 }
 
 void
 constr_match::format(std::string& out) const {
 	out += "match ";
 	arg_.format(out);
-	out += " restype ";
-	restype_.format(out);
+	out += " casetype ";
+	casetype_.format(out);
 	for (const auto& branch : branches_) {
 		out += "| ";
 		out += branch.constructor;
@@ -693,7 +693,7 @@ constr_match::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_match = dynamic_cast<const constr_match*>(&other)) {
-		return restype_ == other_match->restype_ && arg_ == other_match->arg_ && branches_ == other_match->branches_;
+		return casetype_ == other_match->casetype_ && arg_ == other_match->arg_ && branches_ == other_match->branches_;
 	} else {
 		return false;
 	}
@@ -702,15 +702,15 @@ constr_match::operator==(const constr_base& other) const noexcept {
 constr_t
 constr_match::check(const type_context_t& ctx) const {
 	auto argtype = arg_.check(ctx);
-	return local_subst(restype_, 0, {argtype});
+	return local_subst(casetype_, 0, {argtype});
 }
 
 constr_t
 constr_match::shift(std::size_t limit, int dir) const {
 	bool diff = false;
 
-	auto restype = restype_.shift(limit + 1, dir);
-	diff = diff || restype.repr() != restype_.repr();
+	auto casetype = casetype_.shift(limit , dir);
+	diff = diff || casetype.repr() != casetype_.repr();
 	auto arg = arg_.shift(limit, dir);
 	diff = diff || arg.repr() != arg_.repr();
 
@@ -722,7 +722,7 @@ constr_match::shift(std::size_t limit, int dir) const {
 	}
 
 	if (diff) {
-		return constr_t(std::make_shared<constr_match>(std::move(restype), std::move(arg), std::move(branches)));
+		return constr_t(std::make_shared<constr_match>(std::move(casetype), std::move(arg), std::move(branches)));
 	} else {
 		return constr_t(shared_from_this());
 	}

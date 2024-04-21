@@ -508,7 +508,7 @@ class constr_match final : public constr_base {
 public:
 	~constr_match() override;
 
-	constr_match(constr_t restype, constr_t arg, std::vector<match_branch_t> branches);
+	constr_match(constr_t casetype, constr_t arg, std::vector<match_branch_t> branches);
 
 	void
 	format(std::string& out) const override;
@@ -522,11 +522,13 @@ public:
 	constr_t
 	shift(std::size_t limit, int dir) const override;
 
-	// The result type of the case expression. Note that this is an expression
-	// dependent on the argument type.
+	// The type of the case expression abstracted over its argument -- i.e.
+	// this is a product type taking the match expression as the first argument
+	// and producing the result type of the match expression (applied to the
+	// match argument).
 	inline
 	const constr_t&
-	restype() const noexcept { return restype_; }
+	casetype() const noexcept { return casetype_; }
 
 	// The actual argument of the case expression.
 	inline
@@ -542,7 +544,7 @@ public:
 	branches() const noexcept { return branches_; }
 
 private:
-	constr_t restype_;
+	constr_t casetype_;
 	constr_t arg_;
 	std::vector<match_branch_t> branches_;
 };

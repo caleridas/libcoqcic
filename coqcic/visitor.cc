@@ -205,9 +205,10 @@ visit_transform(
 		visitor.push_local(
 			nullptr,
 			&arg,
-			nullptr);
-		auto maybe_restype = visit_transform(match_case->restype(), visitor);
-		const auto& restype = maybe_restype ? *maybe_restype : match_case->restype();
+			nullptr
+		);
+		auto maybe_casetype = visit_transform(match_case->casetype(), visitor);
+		const auto& casetype = maybe_casetype ? *maybe_casetype : match_case->casetype();
 		visitor.pop_local();
 
 		bool changed = false;
@@ -225,13 +226,13 @@ visit_transform(
 			branches.push_back(match_branch_t{branch.constructor, branch.nargs, expr});
 		}
 
-		changed = changed || maybe_arg || maybe_restype;
+		changed = changed || maybe_arg || maybe_casetype;
 
-		auto result = visitor.handle_match(restype, arg, branches);
+		auto result = visitor.handle_match(casetype, arg, branches);
 		if (result) {
 			return result;
 		} else if (changed) {
-			return builder::match(restype, arg, branches);
+			return builder::match(casetype, arg, branches);
 		} else {
 			return {};
 		}

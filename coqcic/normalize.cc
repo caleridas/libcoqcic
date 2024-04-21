@@ -130,8 +130,8 @@ normalize_rec(const constr_t& input) {
 		auto maybe_arg = normalize_rec(match_case->arg());
 		const auto& arg = maybe_arg ? *maybe_arg : match_case->arg();
 
-		auto maybe_restype = normalize_rec(match_case->restype());
-		const auto& restype = maybe_restype ? *maybe_restype : match_case->restype();
+		auto maybe_casetype = normalize_rec(match_case->casetype());
+		const auto& casetype = maybe_casetype ? *maybe_casetype : match_case->casetype();
 
 		bool changed = false;
 		std::vector<match_branch_t> branches;
@@ -142,10 +142,10 @@ normalize_rec(const constr_t& input) {
 			branches.push_back(match_branch_t{branch.constructor, branch.nargs, expr});
 		}
 
-		changed = changed || maybe_arg || maybe_restype;
+		changed = changed || maybe_arg || maybe_casetype;
 
 		if (changed) {
-			return builder::match(restype, arg, branches);
+			return builder::match(casetype, arg, branches);
 		} else {
 			return {};
 		}

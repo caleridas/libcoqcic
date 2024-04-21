@@ -345,7 +345,6 @@ constr_from_sexpr(const sexpr& e) {
 			if (!branches) {
 				return branches.error();
 			}
-			// XXX: casetype is not quite correct, needs one lambda abstraction removed
 			return builder::match(casetype.move_value(), match.move_value(), branches.move_value());
 		} else if (kind == "Fix") {
 			if (args.size() < 2) {

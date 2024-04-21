@@ -61,7 +61,7 @@ public:
 
 	virtual
 	std::optional<constr_t>
-	handle_match(const constr_t& restype, const constr_t& arg, const std::vector<match_branch_t>& branches);
+	handle_match(const constr_t& casetype, const constr_t& arg, const std::vector<match_branch_t>& branches);
 
 	virtual
 	std::optional<constr_t>
