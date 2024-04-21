@@ -10,6 +10,7 @@ libcoqcic_SOURCES = \
 	coqcic/simpl.cc \
 	coqcic/visitor.cc \
 	coqcic/sexpr.cc \
+	coqcic/to_sexpr.cc \
 	coqcic/mainpage.cc \
 
 libcoqcic_HEADERS = \
@@ -23,6 +24,7 @@ libcoqcic_HEADERS = \
 	coqcic/parse_sexpr.h \
 	coqcic/sfb.h \
 	coqcic/simpl.h \
+	coqcic/to_sexpr.h \
 	coqcic/visitor.h \
 	coqcic/sexpr.h \
 
@@ -35,6 +37,7 @@ libcoqcic_TESTS = \
 	coqcic/normalize_test \
 	coqcic/parse_sexpr_test \
 	coqcic/simpl_test \
+	coqcic/to_sexpr_test \
 
 libcoqcic_VERSION = 0.0.2
 libcoqcic_SOVERSION = 0
