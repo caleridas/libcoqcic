@@ -8,8 +8,7 @@ namespace {
 
 template<typename T>
 std::vector<T>
-to_vec(const lazy_stack<T>& stack)
-{
+to_vec(const lazy_stack<T>& stack) {
 	std::vector<T> result;
 	std::size_t size = stack.size();
 	for (std::size_t n = 0; n < size; ++n) {
@@ -21,8 +20,7 @@ to_vec(const lazy_stack<T>& stack)
 
 }  // namespace
 
-TEST(LazyStack, small)
-{
+TEST(lazy_stack_test, small) {
 	using stack_type = lazy_stack<int>;
 
 	stack_type s0;
@@ -41,8 +39,7 @@ TEST(LazyStack, small)
 	EXPECT_EQ(1, s2.at(1));
 }
 
-TEST(LazyStack, push_pop)
-{
+TEST(lazy_stack_test, push_pop) {
 	using stack_type = lazy_stack<int>;
 	using vec_type = std::vector<int>;
 
@@ -65,8 +62,7 @@ TEST(LazyStack, push_pop)
 }
 
 
-TEST(LazyStack, large)
-{
+TEST(lazy_stack_test, large) {
 	using stack_type = lazy_stack<int>;
 
 	stack_type s;
@@ -80,8 +76,7 @@ TEST(LazyStack, large)
 	}
 }
 
-TEST(LazyStack, assign)
-{
+TEST(lazy_stack_test, assign) {
 	using stack_type = lazy_stack<int>;
 
 	stack_type s;

@@ -7,23 +7,19 @@ namespace coqcic {
 namespace {
 
 bool
-is_whitespace(char c)
-{
+is_whitespace(char c) {
 	return (c == ' ' || c == '\n' || c == '\r' || c == '\t');
 }
 
 bool
-is_normal_char(char c)
-{
+is_normal_char(char c) {
 	return !is_whitespace(c) && c != '(' && c != ')' && c != '"' && c != 0;
 }
 
 class parser {
 public:
 	inline explicit
-	parser(std::istream& stream)
-		: stream_(stream), index_(0)
-	{
+	parser(std::istream& stream) : stream_(stream), index_(0) {
 		stream_.get(current_);
 		if (stream_.eof()) {
 			current_ = 0;
@@ -40,8 +36,7 @@ public:
 	parse_expr();
 
 	inline void
-	skip_whitespace()
-	{
+	skip_whitespace() {
 		while (is_whitespace(current_)) {
 			next();
 		}
@@ -49,8 +44,7 @@ public:
 
 private:
 	inline void
-	next()
-	{
+	next() {
 		++index_;
 		stream_.get(current_);
 		if (stream_.eof()) {
@@ -64,8 +58,7 @@ private:
 };
 
 sexpr_parse_result<sexpr>
-parser::parse_terminal()
-{
+parser::parse_terminal() {
 	std::size_t location = index_;
 
 	std::string value;
@@ -85,8 +78,7 @@ parser::parse_terminal()
 }
 
 sexpr_parse_result<sexpr>
-parser::parse_compound()
-{
+parser::parse_compound() {
 	std::size_t location = index_;
 
 	std::string kind;
@@ -123,8 +115,7 @@ parser::parse_compound()
 }
 
 sexpr_parse_result<sexpr>
-parser::parse_expr()
-{
+parser::parse_expr() {
 	if (current_ == '(') {
 		return parse_compound();
 	} else {
@@ -132,20 +123,17 @@ parser::parse_expr()
 	}
 }
 
-
 }  // namespace
 
 sexpr_parse_result<sexpr>
-parse_sexpr(std::istream& s)
-{
+parse_sexpr(std::istream& s) {
 	parser p(s);
 	p.skip_whitespace();
 	return p.parse_expr();
 }
 
 sexpr_parse_result<sexpr>
-parse_sexpr(const std::string& s)
-{
+parse_sexpr(const std::string& s) {
 	std::stringstream ss(s, std::ios_base::in);
 	return parse_sexpr(ss);
 }

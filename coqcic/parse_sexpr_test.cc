@@ -2,8 +2,7 @@
 
 #include "gtest/gtest.h"
 
-TEST(SExpr, parse_success)
-{
+TEST(parse_sexpr_test, parse_success) {
 	auto e = coqcic::parse_sexpr("(foo bar(baz bla   ))");
 	EXPECT_TRUE(e);
 

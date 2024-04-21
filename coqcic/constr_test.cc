@@ -13,8 +13,7 @@ struct globals {
 };
 
 globals
-build_globals()
-{
+build_globals() {
 	struct globals globals;
 	globals.nat = global("nat");
 	globals.O = global("O");
@@ -30,8 +29,7 @@ build_globals()
 }
 
 coqcic::constr_t
-lookup_global(const globals& globals, const std::string& name)
-{
+lookup_global(const globals& globals, const std::string& name) {
 	if (name == "nat") {
 		return globals.set;
 	} else if (name == "O") {
@@ -56,8 +54,7 @@ lookup_global(const globals& globals, const std::string& name)
 
 }
 
-TEST(CICTest, simple_check)
-{
+TEST(constr_test, simple_check) {
 	auto globals = build_globals();
 	type_context_t ctx;
 	ctx.global_types = [globals](const std::string& name) { return lookup_global(globals, name); };
@@ -75,8 +72,7 @@ TEST(CICTest, simple_check)
 	}
 }
 
-TEST(CICTest, dup_pair)
-{
+TEST(constr_test, dup_pair) {
 	auto globals = build_globals();
 	type_context_t ctx;
 	ctx.global_types = [globals](const std::string& name) { return lookup_global(globals, name); };

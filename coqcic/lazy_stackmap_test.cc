@@ -4,8 +4,7 @@
 
 namespace coqcic {
 
-TEST(LazyStackMap, small)
-{
+TEST(lazy_stackmap_test, small) {
 	using map_type = lazy_stackmap<std::string>;
 
 	map_type m;

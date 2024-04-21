@@ -7,8 +7,7 @@ namespace coqcic {
 namespace {
 
 from_sexpr_result<std::optional<std::string>>
-argname_from_sexpr(const sexpr& e)
-{
+argname_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -31,8 +30,7 @@ argname_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<std::size_t>
-uint_from_sexpr(const sexpr& e)
-{
+uint_from_sexpr(const sexpr& e) {
 	if (auto t = e.as_terminal()) {
 		return std::stoi(t->value());
 	} else {
@@ -41,8 +39,7 @@ uint_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<std::string>
-string_from_sexpr(const sexpr& e)
-{
+string_from_sexpr(const sexpr& e) {
 	if (auto t = e.as_terminal()) {
 		return t->value();
 	} else {
@@ -51,8 +48,7 @@ string_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<constr_t>
-match_from_sexpr(const sexpr& e)
-{
+match_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -70,8 +66,7 @@ match_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<match_branch_t>
-branch_from_sexpr(const sexpr& e)
-{
+branch_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -99,8 +94,7 @@ branch_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<std::vector<match_branch_t>>
-branches_from_sexpr(const sexpr& e)
-{
+branches_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		auto kind = c->kind();
 		auto args = c->args();
@@ -123,8 +117,7 @@ branches_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<fix_function_t>
-fixfunction_from_sexpr(const sexpr& e)
-{
+fixfunction_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -192,8 +185,7 @@ from_sexpr_result<sfb_t>
 sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix);
 
 from_sexpr_result<constr_t>
-constr_from_sexpr(const sexpr& e)
-{
+constr_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -286,7 +278,7 @@ constr_from_sexpr(const sexpr& e)
 			if (!body) {
 				return body.error();
 			}
-			return builder::let(name.move_value(), term.move_value(), body.move_value());
+			return builder::let(name.move_value(), term.move_value(), termtype.move_value(), body.move_value());
 		} else if (kind == "App") {
 			if (args.size() < 2) {
 				return from_sexpr_error {"Apply requires at least 2 arguments", &e};
@@ -383,8 +375,7 @@ constr_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<constructor_t>
-constructor_from_sexpr(const sexpr& e)
-{
+constructor_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -413,8 +404,7 @@ constructor_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<one_inductive_t>
-one_inductive_from_sexpr(const sexpr& e)
-{
+one_inductive_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -452,8 +442,7 @@ one_inductive_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<modexpr>
-modexpr_from_sexpr(const sexpr& e)
-{
+modexpr_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -487,8 +476,7 @@ modexpr_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<std::pair<std::vector<std::pair<std::string, modexpr>>, modexpr>>
-functored_modexpr_from_sexpr(const sexpr& e)
-{
+functored_modexpr_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -533,8 +521,7 @@ using mod_functor_args_t = std::vector<std::pair<std::string, modexpr>>;
 }  // namespace
 
 from_sexpr_result<std::pair<mod_functor_args_t, std::vector<sfb_t>>>
-modsig_from_sexpr(const sexpr& e)
-{
+modsig_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -577,8 +564,7 @@ modsig_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<std::optional<modexpr>>
-optional_mod_type_from_sexpr(const sexpr& e)
-{
+optional_mod_type_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -604,8 +590,7 @@ optional_mod_type_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<module_body>
-module_body_from_sexpr(const sexpr& e)
-{
+module_body_from_sexpr(const sexpr& e) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -653,8 +638,7 @@ module_body_from_sexpr(const sexpr& e)
 }
 
 from_sexpr_result<sfb_t>
-sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix)
-{
+sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -769,15 +753,13 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix)
 }
 
 from_sexpr_result<sfb_t>
-sfb_from_sexpr(const sexpr& e)
-{
+sfb_from_sexpr(const sexpr& e) {
 	std::shared_ptr<const fix_group_t> tmp;
 	return sfb_from_sexpr(e, tmp);
 }
 
 from_sexpr_str_result<constr_t>
-constr_from_sexpr_str(const std::string& str)
-{
+constr_from_sexpr_str(const std::string& str) {
 	auto e = parse_sexpr(str);
 	if (!e) {
 		return from_sexpr_str_error {e.error().description, e.error().location};
@@ -795,8 +777,7 @@ constr_from_sexpr_str(const std::string& str)
 }
 
 from_sexpr_str_result<sfb_t>
-sfb_from_sexpr_str(const std::string& str)
-{
+sfb_from_sexpr_str(const std::string& str) {
 	auto e = parse_sexpr(str);
 	if (!e) {
 		return from_sexpr_str_error {e.error().description, e.error().location};

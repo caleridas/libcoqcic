@@ -4,8 +4,7 @@
 
 using namespace coqcic::builder;
 
-TEST(CICFixSpecTest, list_reverse)
-{
+TEST(fix_specialize_test, list_reverse) {
 	// This is the list "rev" function with signature:
 	//   rev : (T : Type) -> (l : list T) -> list T
 	//

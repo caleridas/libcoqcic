@@ -57,8 +57,7 @@ static const char CONSTR_EXAMPLE[] = R"( (Prod
 
 }  // namespace
 
-TEST(FromSexpr, parse_constr)
-{
+TEST(from_sexpr_test, parse_constr) {
 	auto e = coqcic::parse_sexpr(CONSTR_EXAMPLE);
 	ASSERT_TRUE(e) << e.error().description << ":" << e.error().location;
 	auto r = constr_from_sexpr(e.value());
@@ -69,7 +68,8 @@ TEST(FromSexpr, parse_constr)
 		"(f : (t : T,3 -> (m : (CPPSynth.export.List.mylist T,4) -> "
 		"((P,4 m,1) -> (P,5 (CPPSynth.export.List.mycons T,6 t,3 m,2))))) -> "
 		"(m : (CPPSynth.export.List.mylist T,4) -> (P,4 m,1))))))",
-		r.value().debug_string());
+		r.value().debug_string()
+	);
 }
 
 namespace {
@@ -106,8 +106,7 @@ static const char SFB_INDUCTIVE_EXAMPLE[] = R"(
 
 }  // namespace
 
-TEST(FromSexpr, parse_sfb_inductive)
-{
+TEST(from_sexpr_test, parse_sfb_inductive) {
 	auto e = coqcic::parse_sexpr(SFB_INDUCTIVE_EXAMPLE);
 	ASSERT_TRUE(e) << e.error().description << ":" << e.error().location;
 	auto s = sfb_from_sexpr(e.value());
@@ -117,7 +116,8 @@ TEST(FromSexpr, parse_sfb_inductive)
 		"Inductive mylist : (T : Set -> Set) :=\n"
 		" | my_nil : (T : Set -> (mylist,2 T,1))\n"
 		" | mycons : (T : Set -> (T,1 -> ((mylist,3 T,2) -> (mylist,4 T,3))))\n"
-		".");
+		"."
+	);
 }
 
 namespace {
@@ -191,8 +191,7 @@ static const char SFB_MODULE_EXAMPLE[] = R"(
 
 }  // namespace
 
-TEST(FromSexpr, parse_sfb_module)
-{
+TEST(from_sexpr_test, parse_sfb_module) {
 	auto e = coqcic::parse_sexpr(SFB_MODULE_EXAMPLE);
 	ASSERT_TRUE(e) << e.error().description << ":" << e.error().location;
 	auto s = sfb_from_sexpr(e.value());
@@ -218,5 +217,4 @@ TEST(FromSexpr, parse_sfb_module)
 		"End.\n"
 		"End.");
 }
-
 

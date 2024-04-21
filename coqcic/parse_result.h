@@ -8,34 +8,26 @@ namespace coqcic {
 template<typename ResultType, typename ErrorType>
 class parse_result {
 public:
-	parse_result(ResultType value)
-		: repr_(std::move(value))
-	{
+	parse_result(ResultType value) : repr_(std::move(value)) {
 	}
 
-	parse_result(ErrorType error)
-		: repr_(std::move(error))
-	{
+	parse_result(ErrorType error) : repr_(std::move(error)) {
 	}
 
-	inline operator bool() const noexcept
-	{
+	inline operator bool() const noexcept {
 		return !!std::get_if<ResultType>(&repr_);
 	}
 
-	inline const ResultType& value() const noexcept
-	{
+	inline const ResultType& value() const noexcept {
 		return std::get<ResultType>(repr_);
 	}
 
-	inline ResultType move_value() noexcept
-	{
+	inline ResultType move_value() noexcept {
 		ResultType value = std::move(std::get<ResultType>(repr_));
 		return value;
 	}
 
-	inline const ErrorType& error() const noexcept
-	{
+	inline const ErrorType& error() const noexcept {
 		return std::get<ErrorType>(repr_);
 	}
 

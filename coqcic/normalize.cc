@@ -9,8 +9,7 @@ namespace {
 // - "product-of-product" will be flattened into a single product
 // - "lambda-of-lambda" will be flattened into a single lambda
 std::optional<constr_t>
-normalize_rec(const constr_t& input)
-{
+normalize_rec(const constr_t& input) {
 	if (input.as_local()) {
 		return {};
 	} else if (input.as_global()) {
@@ -75,11 +74,14 @@ normalize_rec(const constr_t& input)
 		auto maybe_value = normalize_rec(let->value());
 		const auto& value = maybe_value ? *maybe_value : let->value();
 
+		auto maybe_type = normalize_rec(let->type());
+		const auto& type = maybe_type ? *maybe_type : let->type();
+
 		auto maybe_body = normalize_rec(let->body());
 		const auto& body = maybe_body ? *maybe_body : let->body();
 
-		if (maybe_value || maybe_body) {
-			return builder::let(let->varname(), value, body);
+		if (maybe_value || maybe_type || maybe_body) {
+			return builder::let(let->varname(), value, type, body);
 		} else {
 			return {};
 		}
@@ -187,8 +189,7 @@ normalize_rec(const constr_t& input)
 }  // namespace
 
 constr_t
-normalize(const constr_t& expr)
-{
+normalize(const constr_t& expr) {
 	auto res = normalize_rec(expr);
 	return res ? *res : expr;
 }

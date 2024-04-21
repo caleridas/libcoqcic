@@ -38,9 +38,10 @@ public:
 
 private:
 	inline
-	lazy_stackmap(std::shared_ptr<lazy_stackmap_repr<T>> repr, std::size_t bottom) noexcept
-		: repr_(std::move(repr)), bottom_(bottom)
-	{
+	lazy_stackmap(
+		std::shared_ptr<lazy_stackmap_repr<T>> repr,
+		std::size_t bottom
+	) noexcept : repr_(std::move(repr)), bottom_(bottom) {
 	}
 
 	std::shared_ptr<lazy_stackmap_repr<T>> repr_;
@@ -50,16 +51,14 @@ private:
 template<typename T>
 inline
 bool
-lazy_stackmap<T>::empty() const noexcept
-{
+lazy_stackmap<T>::empty() const noexcept {
 	return !repr_;
 }
 
 template<typename T>
 inline
 lazy_stackmap<T>
-lazy_stackmap<T>::push(T key) const
-{
+lazy_stackmap<T>::push(T key) const {
 	auto next = repr_;
 	auto repr = std::make_shared<lazy_stackmap_repr<T>>();
 	repr->items.emplace(key, bottom_ + 1);
@@ -95,8 +94,7 @@ lazy_stackmap<T>::get_index(const T& key) const noexcept
 template<typename T>
 inline
 std::unordered_map<T, std::size_t>
-lazy_stackmap<T>::flatten() const
-{
+lazy_stackmap<T>::flatten() const {
 	std::unordered_map<T, std::size_t> result;
 
 	auto ptr = repr_.get();
@@ -110,7 +108,6 @@ lazy_stackmap<T>::flatten() const
 	return result;
 }
 
-
 }  // namespace coqcic
 
-#endif  // COQCIC_SHARED_STACKMAP_H
+#endif  // COQCIC_LAZY_STACKMAP_H

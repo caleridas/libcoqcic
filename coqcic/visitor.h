@@ -16,7 +16,8 @@ public:
 	push_local(
 		const std::string* name,
 		const constr_t* type,
-		const constr_t* value);
+		const constr_t* value
+	);
 
 	// Remove local variable from stack again.
 	virtual void
@@ -48,7 +49,7 @@ public:
 
 	virtual
 	std::optional<constr_t>
-	handle_let(const std::optional<std::string>& varname, const constr_t& value, const constr_t& body);
+	handle_let(const std::optional<std::string>& varname, const constr_t& value, const constr_t& type, const constr_t& body);
 
 	virtual
 	std::optional<constr_t>

@@ -8,8 +8,7 @@ namespace {
 
 template<typename T>
 std::vector<T>
-to_vec(const lazy_stack<T>& stack)
-{
+to_vec(const lazy_stack<T>& stack) {
 	std::vector<T> result;
 	std::size_t size = stack.size();
 	for (std::size_t n = 0; n < size; ++n) {
@@ -21,8 +20,7 @@ to_vec(const lazy_stack<T>& stack)
 
 }  // namespace
 
-TEST(SimplTest, subst_0)
-{
+TEST(simpl_test, subst_0) {
 	using namespace builder;
 	auto i = lambda(
 		{{"b", global("nat")}},
@@ -36,8 +34,7 @@ TEST(SimplTest, subst_0)
 	EXPECT_EQ(o, e);
 }
 
-TEST(SimplTest, subst_1)
-{
+TEST(simpl_test, subst_1) {
 	using namespace builder;
 	auto i = lambda(
 		{{"b", global("nat")}},

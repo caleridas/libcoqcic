@@ -2,8 +2,7 @@
 
 #include "gtest/gtest.h"
 
-TEST(Normalize, lambda_apply)
-{
+TEST(normalize_test, lambda_apply) {
 	using namespace coqcic::builder;
 	auto o = lambda(
 		{{"a", global("nat")}},

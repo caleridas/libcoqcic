@@ -22,14 +22,16 @@ std::optional<fix_spec_info>
 compute_fix_specialization_closure(
 	const fix_group_t& group,
 	std::size_t fn_index,
-	std::vector<std::optional<std::size_t>> seed_arg);
+	std::vector<std::optional<std::size_t>> seed_arg
+);
 
 fix_group_t
 apply_fix_specialization(
 	const fix_group_t& group,
 	const fix_spec_info& info,
 	const std::vector<constr_t>& spec_args,
-	const std::function<std::string(std::size_t)>& namegen);
+	const std::function<std::string(std::size_t)>& namegen
+);
 
 }  // namespace coqcic
 

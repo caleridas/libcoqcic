@@ -5,8 +5,8 @@
 
 void show_error_context(
 	const std::string& data,
-	std::size_t location)
-{
+	std::size_t location
+) {
 	std::size_t current_line_start = 0;
 	for (;;) {
 		std::size_t end = data.find('\n', current_line_start);
@@ -24,8 +24,7 @@ void show_error_context(
 	std::cerr << "(at end of stream)\n";
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 	std::string data;
 	while (!std::cin.eof()) {
 		std::string tmp;

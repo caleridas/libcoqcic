@@ -36,23 +36,21 @@ class constr_t {
 public:
 	explicit
 	inline
-	constr_t(std::shared_ptr<const constr_base> repr) noexcept
-		: repr_(std::move(repr))
-	{
+	constr_t(
+		std::shared_ptr<const constr_base> repr
+	) noexcept : repr_(std::move(repr)) {
 	}
 
 	constr_t() noexcept = default;
 
 	inline constr_t&
-	operator=(constr_t other) noexcept
-	{
+	operator=(constr_t other) noexcept {
 		swap(other);
 		return *this;
 	}
 
 	inline void
-	swap(constr_t& other) noexcept
-	{
+	swap(constr_t& other) noexcept {
 		repr_.swap(other.repr_);
 	}
 
@@ -79,14 +77,12 @@ public:
 
 	const
 	std::shared_ptr<const constr_base>&
-	repr() const noexcept
-	{
+	repr() const noexcept {
 		return repr_;
 	}
 
 	std::shared_ptr<const constr_base>
-	extract_repr() && noexcept
-	{
+	extract_repr() && noexcept {
 		return std::move(repr_);
 	}
 
@@ -116,8 +112,7 @@ struct formal_arg_t {
 
 	inline
 	bool
-	operator==(const formal_arg_t& other) const noexcept
-	{
+	operator==(const formal_arg_t& other) const noexcept {
 		return type == other.type;
 	}
 
@@ -136,8 +131,7 @@ struct match_branch_t {
 	constr_t expr;
 
 	inline bool
-	operator==(const match_branch_t& other) const noexcept
-	{
+	operator==(const match_branch_t& other) const noexcept {
 		return
 			constructor == other.constructor &&
 			nargs == other.nargs &&
@@ -157,8 +151,7 @@ struct fix_function_t {
 	constr_t body;
 
 	inline bool
-	operator==(const fix_function_t& other) const noexcept
-	{
+	operator==(const fix_function_t& other) const noexcept {
 		return name == other.name && args == other.args && restype == other.restype && body == other.body;
 	}
 };
@@ -169,8 +162,7 @@ struct fix_group_t {
 	std::vector<fix_function_t> functions;
 
 	inline bool
-	operator==(const fix_group_t& other) const noexcept
-	{
+	operator==(const fix_group_t& other) const noexcept {
 		return functions == other.functions;
 	}
 };
@@ -289,7 +281,8 @@ public:
 
 	constr_builtin(
 		std::string name,
-		std::function<constr_t(const constr_base&)> check);
+		std::function<constr_t(const constr_base&)> check
+	);
 
 	void
 	format(std::string& out) const override;
@@ -395,7 +388,9 @@ public:
 	constr_let(
 		std::optional<std::string> varname,
 		constr_t value,
-		constr_t body);
+		constr_t type,
+		constr_t body
+	);
 
 	void
 	format(std::string& out) const override;
@@ -419,11 +414,16 @@ public:
 
 	inline
 	const constr_t&
+	type() const noexcept { return type_; }
+
+	inline
+	const constr_t&
 	body() const noexcept { return body_; }
 
 private:
 	std::optional<std::string> varname_;
 	constr_t value_;
+	constr_t type_;
 	constr_t body_;
 };
 
@@ -594,8 +594,7 @@ const constr_fix* constr_t::as_fix() const noexcept { return dynamic_cast<const 
 
 template<typename Visitor>
 inline auto
-constr_t::visit(Visitor&& vis) const
-{
+constr_t::visit(Visitor&& vis) const {
 	if (auto local = as_local()) {
 		return vis(*local);
 	} else if (auto global = as_global()) {
@@ -654,7 +653,7 @@ constr_t
 lambda(std::vector<formal_arg_t> args, constr_t body);
 
 constr_t
-let(std::optional<std::string> varname, constr_t value, constr_t body);
+let(std::optional<std::string> varname, constr_t value, constr_t type, constr_t body);
 
 constr_t
 apply(constr_t fn, std::vector<constr_t> arg);

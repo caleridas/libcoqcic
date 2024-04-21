@@ -2,88 +2,81 @@
 
 namespace coqcic {
 
-transform_visitor::~transform_visitor()
-{
+transform_visitor::~transform_visitor() {
 }
 
 void
 transform_visitor::push_local(
 	const std::string* name,
 	const constr_t* type,
-	const constr_t* value)
-{
+	const constr_t* value
+) {
 }
 
 void
-transform_visitor::pop_local()
-{
+transform_visitor::pop_local() {
 }
 
 std::optional<constr_t>
-transform_visitor::handle_local(const std::string& name, std::size_t index)
-{
+transform_visitor::handle_local(const std::string& name, std::size_t index) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_global(const std::string& name)
-{
+transform_visitor::handle_global(const std::string& name) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_builtin(const std::string& name)
-{
+transform_visitor::handle_builtin(const std::string& name) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_product(const std::vector<formal_arg_t>& args, const constr_t& restype)
-{
+transform_visitor::handle_product(const std::vector<formal_arg_t>& args, const constr_t& restype) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_lambda(const std::vector<formal_arg_t>& args, const constr_t& body)
-{
+transform_visitor::handle_lambda(const std::vector<formal_arg_t>& args, const constr_t& body) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_let(const std::optional<std::string>& varname, const constr_t& value, const constr_t& body)
-{
+transform_visitor::handle_let(
+	const std::optional<std::string>& varname,
+	const constr_t& value,
+	const constr_t& type,
+	const constr_t& body
+) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_apply(const constr_t& fn, const std::vector<constr_t>& args)
-{
+transform_visitor::handle_apply(const constr_t& fn, const std::vector<constr_t>& args) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_cast(const constr_t& term, const constr_cast::kind_type kind, const constr_t& typeterm)
-{
+transform_visitor::handle_cast(const constr_t& term, const constr_cast::kind_type kind, const constr_t& typeterm) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_match(const constr_t& argtype, const constr_t& restype, const std::vector<match_branch_t>& branches)
-{
+transform_visitor::handle_match(const constr_t& argtype, const constr_t& restype, const std::vector<match_branch_t>& branches) {
 	return {};
 }
 
 std::optional<constr_t>
-transform_visitor::handle_fix(std::size_t index, const std::shared_ptr<const fix_group_t>& group)
-{
+transform_visitor::handle_fix(std::size_t index, const std::shared_ptr<const fix_group_t>& group) {
 	return {};
 }
 
 std::optional<constr_t>
 visit_transform(
 	const constr_t& input,
-	transform_visitor& visitor)
-{
+	transform_visitor& visitor
+) {
 	if (auto local = input.as_local()) {
 		return visitor.handle_local(local->name(), local->index());
 	} else if (auto global = input.as_global()) {
@@ -150,19 +143,23 @@ visit_transform(
 		auto maybe_value = visit_transform(let->value(), visitor);
 		const auto& value = maybe_value ? *maybe_value : let->value();
 
+		auto maybe_type = visit_transform(let->type(), visitor);
+		const auto& type = maybe_type ? *maybe_type : let->type();
+
 		visitor.push_local(
 			let->varname() ? &*let->varname() : nullptr,
-			&value,
-			nullptr);
+			&type,
+			&value
+		);
 		auto maybe_body = visit_transform(let->body(), visitor);
 		const auto& body = maybe_body ? *maybe_body : let->body();
 		visitor.pop_local();
 
-		auto result = visitor.handle_let(let->varname(), value, body);
+		auto result = visitor.handle_let(let->varname(), value, type, body);
 		if (result) {
 			return result;
 		} else if (maybe_value || maybe_body) {
-			return builder::let(let->varname(), value, body);
+			return builder::let(let->varname(), value, type, body);
 		} else {
 			return {};
 		}

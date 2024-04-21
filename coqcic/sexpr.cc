@@ -5,40 +5,33 @@
 namespace coqcic {
 
 std::string
-sexpr::debug_string() const
-{
+sexpr::debug_string() const {
 	std::stringstream ss;
 	format(ss);
 	return ss.str();
 }
 
-sexpr_repr::~sexpr_repr()
-{
+sexpr_repr::~sexpr_repr() {
 }
 
-sexpr_terminal::~sexpr_terminal()
-{
+sexpr_terminal::~sexpr_terminal() {
 }
 
 void
-sexpr_terminal::format(std::ostream& os) const
-{
+sexpr_terminal::format(std::ostream& os) const {
 	os << value();
 }
 
 std::unique_ptr<sexpr_repr>
-sexpr_terminal::copy() const
-{
+sexpr_terminal::copy() const {
 	return std::make_unique<sexpr_terminal>(value_, location());
 }
 
-sexpr_compound::~sexpr_compound()
-{
+sexpr_compound::~sexpr_compound() {
 }
 
 void
-sexpr_compound::format(std::ostream& os) const
-{
+sexpr_compound::format(std::ostream& os) const {
 	os << '(';
 	os << kind_;
 	for (const auto& arg : args()) {
@@ -49,8 +42,7 @@ sexpr_compound::format(std::ostream& os) const
 }
 
 std::unique_ptr<sexpr_repr>
-sexpr_compound::copy() const
-{
+sexpr_compound::copy() const {
 	return std::make_unique<sexpr_compound>(kind_, std::vector<sexpr>(args_.begin(), args_.end()), location());
 }
 

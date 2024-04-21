@@ -14,7 +14,8 @@ constr_t
 local_subst(
 	const constr_t& input,
 	std::size_t index,
-	std::vector<constr_t> subst);
+	std::vector<constr_t> subst
+);
 
 }  // namespace coqcic
 

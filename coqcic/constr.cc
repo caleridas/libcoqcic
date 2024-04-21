@@ -12,38 +12,32 @@ namespace coqcic {
 // constr
 
 void
-constr_t::format(std::string& out) const
-{
+constr_t::format(std::string& out) const {
 	repr_->format(out);
 }
 
 bool
-constr_t::operator==(const constr_t& other) const
-{
+constr_t::operator==(const constr_t& other) const {
 	return repr_ == other.repr_ || *repr_ == *other.repr_;
 }
 
 constr_t
-constr_t::check(const type_context_t& ctx) const
-{
+constr_t::check(const type_context_t& ctx) const {
 	return repr_->check(ctx);
 }
 
 constr_t
-constr_t::simpl() const
-{
+constr_t::simpl() const {
 	return repr_->simpl();
 }
 
 constr_t
-constr_t::shift(std::size_t limit, int dir) const
-{
+constr_t::shift(std::size_t limit, int dir) const {
 	return repr_->shift(limit, dir);
 }
 
 std::string
-constr_t::debug_string() const
-{
+constr_t::debug_string() const {
 	std::string result;
 	format(result);
 	return result;
@@ -53,8 +47,7 @@ constr_t::debug_string() const
 // free functions on constr
 
 static void
-collect_external_references(const constr_t& obj, std::size_t depth, std::vector<std::size_t> refs)
-{
+collect_external_references(const constr_t& obj, std::size_t depth, std::vector<std::size_t> refs) {
 	if (auto local = obj.as_local()) {
 		if (local->index() >= depth) {
 			refs.push_back(local->index() - depth);
@@ -73,6 +66,7 @@ collect_external_references(const constr_t& obj, std::size_t depth, std::vector<
 		collect_external_references(lambda->body(), depth + 1, refs);
 	} else if (auto let = obj.as_let()) {
 		collect_external_references(let->value(), depth, refs);
+		collect_external_references(let->type(), depth, refs);
 		collect_external_references(let->body(), depth + 1, refs);
 	} else if (auto fix = obj.as_fix()) {
 		depth += fix->group()->functions.size();
@@ -91,8 +85,7 @@ collect_external_references(const constr_t& obj, std::size_t depth, std::vector<
 // Collect the de Bruijn indices of all locals in this object that
 // are not resolvable within the construct itself.
 std::vector<std::size_t>
-collect_external_references(const constr_t& obj)
-{
+collect_external_references(const constr_t& obj) {
 	std::vector<std::size_t> refs;
 	collect_external_references(obj, 0, refs);
 
@@ -106,8 +99,7 @@ collect_external_references(const constr_t& obj)
 // type_context_t
 
 type_context_t
-type_context_t::push_local(std::string name, constr_t type) const
-{
+type_context_t::push_local(std::string name, constr_t type) const {
 	type_context_t new_ctx(*this);
 	new_ctx.locals = locals.push(local_entry{std::move(name), std::move(type)});
 	return new_ctx;
@@ -116,25 +108,21 @@ type_context_t::push_local(std::string name, constr_t type) const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_base
 
-constr_base::~constr_base()
-{
+constr_base::~constr_base() {
 }
 
 constr_t
-constr_base::simpl() const
-{
+constr_base::simpl() const {
 	return constr_t(shared_from_this());
 }
 
 constr_t
-constr_base::shift(std::size_t limit, int dir) const
-{
+constr_base::shift(std::size_t limit, int dir) const {
 	return constr_t(shared_from_this());
 }
 
 std::string
-constr_base::repr() const
-{
+constr_base::repr() const {
 	std::string result;
 	format(result);
 	return result;
@@ -143,27 +131,23 @@ constr_base::repr() const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_local
 
-constr_local::~constr_local()
-{
+constr_local::~constr_local() {
 }
 
 constr_local::constr_local(
 	std::string name,
-	std::size_t index)
-	: name_(std::move(name))
-	, index_(std::move(index))
-{
+	std::size_t index
+) : name_(std::move(name)),
+	index_(std::move(index)) {
 }
 
 void
-constr_local::format(std::string& out) const
-{
+constr_local::format(std::string& out) const {
 	out += name_ + "," + std::to_string(index_);
 }
 
 bool
-constr_local::operator==(const constr_base& other) const noexcept
-{
+constr_local::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_local = dynamic_cast<const constr_local*>(&other)) {
@@ -174,14 +158,12 @@ constr_local::operator==(const constr_base& other) const noexcept
 }
 
 constr_t
-constr_local::check(const type_context_t& ctx) const
-{
+constr_local::check(const type_context_t& ctx) const {
 	return ctx.locals.at(index_).type;
 }
 
 constr_t
-constr_local::shift(std::size_t limit, int dir) const
-{
+constr_local::shift(std::size_t limit, int dir) const {
 	if (index_ >= limit) {
 		return constr_t(std::make_shared<constr_local>(name_, index_ + dir));
 	} else {
@@ -193,25 +175,19 @@ constr_local::shift(std::size_t limit, int dir) const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_global
 
-constr_global::~constr_global()
-{
+constr_global::~constr_global() {
 }
 
-constr_global::constr_global(
-	std::string name)
-	: name_(std::move(name))
-{
+constr_global::constr_global(std::string name) : name_(std::move(name)) {
 }
 
 void
-constr_global::format(std::string& out) const
-{
+constr_global::format(std::string& out) const {
 	out += name_;
 }
 
 bool
-constr_global::operator==(const constr_base& other) const noexcept
-{
+constr_global::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_global = dynamic_cast<const constr_global*>(&other)) {
@@ -222,106 +198,88 @@ constr_global::operator==(const constr_base& other) const noexcept
 }
 
 constr_t
-constr_global::check(const type_context_t& ctx) const
-{
+constr_global::check(const type_context_t& ctx) const {
 	return ctx.global_types(name_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // constr_builtin
 
-constr_builtin::~constr_builtin()
-{
+constr_builtin::~constr_builtin() {
 }
 
 constr_builtin::constr_builtin(
 	std::string name,
-	std::function<constr_t(const constr_base&)> check)
-	: name_(std::move(name))
-	, check_(std::move(check))
-{
+	std::function<constr_t(const constr_base&)> check
+) : name_(std::move(name)),
+	check_(std::move(check)) {
 }
 
 void
-constr_builtin::format(std::string& out) const
-{
+constr_builtin::format(std::string& out) const {
 	out += name_;
 }
 
 bool
-constr_builtin::operator==(const constr_base& other) const noexcept
-{
+constr_builtin::operator==(const constr_base& other) const noexcept {
 	return this == &other;
 }
 
 constr_t
-constr_builtin::check(const type_context_t& ctx) const
-{
+constr_builtin::check(const type_context_t& ctx) const {
 	return check_(*this);
 }
 
 std::shared_ptr<const constr_base>
-constr_builtin::get_set()
-{
-	static const std::shared_ptr<const constr_base> singleton =
-		std::make_shared<constr_builtin>(
-			"Set",
-			[](const constr_base&) { return constr_t(get_type()); }
-		);
+constr_builtin::get_set() {
+	static const std::shared_ptr<const constr_base> singleton = std::make_shared<constr_builtin>(
+		"Set",
+		[](const constr_base&) { return constr_t(get_type()); }
+	);
 	return singleton;
 }
 
 std::shared_ptr<const constr_base>
-constr_builtin::get_prop()
-{
-	static const std::shared_ptr<const constr_base> singleton =
-		std::make_shared<constr_builtin>(
-			"Prop",
-			[](const constr_base&) { return constr_t(get_type()); }
-		);
+constr_builtin::get_prop() {
+	static const std::shared_ptr<const constr_base> singleton = std::make_shared<constr_builtin>(
+		"Prop",
+		[](const constr_base&) { return constr_t(get_type()); }
+	);
 	return singleton;
 }
 
 std::shared_ptr<const constr_base>
-constr_builtin::get_sprop()
-{
-	static const std::shared_ptr<const constr_base> singleton =
-		std::make_shared<constr_builtin>(
-			"SProp",
-			[](const constr_base&) { return constr_t(get_type()); }
-		);
+constr_builtin::get_sprop() {
+	static const std::shared_ptr<const constr_base> singleton = std::make_shared<constr_builtin>(
+		"SProp",
+		[](const constr_base&) { return constr_t(get_type()); }
+	);
 	return singleton;
 }
 
 std::shared_ptr<const constr_base>
-constr_builtin::get_type()
-{
-	static const std::shared_ptr<const constr_base> singleton =
-		std::make_shared<constr_builtin>(
-			"Type",
-			[](const constr_base&) { return constr_t(get_type()); }
-		);
+constr_builtin::get_type() {
+	static const std::shared_ptr<const constr_base> singleton = std::make_shared<constr_builtin>(
+		"Type",
+		[](const constr_base&) { return constr_t(get_type()); }
+	);
 	return singleton;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // constr_product
 
-constr_product::~constr_product()
-{
+constr_product::~constr_product() {
 }
 
 constr_product::constr_product(
 	std::vector<formal_arg_t> args,
-	constr_t restype)
-	: args_(std::move(args))
-	, restype_(std::move(restype))
-{
+	constr_t restype
+) : args_(std::move(args)), restype_(std::move(restype)) {
 }
 
 void
-constr_product::format(std::string& out) const
-{
+constr_product::format(std::string& out) const {
 	out += '(';
 	for (const auto& arg : args_) {
 		if (arg.name) {
@@ -336,8 +294,7 @@ constr_product::format(std::string& out) const
 }
 
 bool
-constr_product::operator==(const constr_base& other) const noexcept
-{
+constr_product::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_product = dynamic_cast<const constr_product*>(&other)) {
@@ -348,8 +305,7 @@ constr_product::operator==(const constr_base& other) const noexcept
 }
 
 constr_t
-constr_product::check(const type_context_t& ctx) const
-{
+constr_product::check(const type_context_t& ctx) const {
 	type_context_t new_ctx = ctx;
 	std::optional<constr_t> expr_type;
 	for (const auto& arg : args_) {
@@ -372,8 +328,7 @@ constr_product::check(const type_context_t& ctx) const
 }
 
 constr_t
-constr_product::shift(std::size_t limit, int dir) const
-{
+constr_product::shift(std::size_t limit, int dir) const {
 	std::vector<formal_arg_t> args;
 	bool change = false;
 
@@ -397,21 +352,17 @@ constr_product::shift(std::size_t limit, int dir) const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_lambda
 
-constr_lambda::~constr_lambda()
-{
+constr_lambda::~constr_lambda() {
 }
 
 constr_lambda::constr_lambda(
 	std::vector<formal_arg_t> args,
-	constr_t body)
-	: args_(std::move(args))
-	, body_(std::move(body))
-{
+	constr_t body
+) : args_(std::move(args)), body_(std::move(body)) {
 }
 
 void
-constr_lambda::format(std::string& out) const
-{
+constr_lambda::format(std::string& out) const {
 	out += '(';
 	for (const auto& arg : args_) {
 		if (arg.name) {
@@ -426,8 +377,7 @@ constr_lambda::format(std::string& out) const
 }
 
 bool
-constr_lambda::operator==(const constr_base& other) const noexcept
-{
+constr_lambda::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_lambda = dynamic_cast<const constr_lambda*>(&other)) {
@@ -438,8 +388,7 @@ constr_lambda::operator==(const constr_base& other) const noexcept
 }
 
 constr_t
-constr_lambda::check(const type_context_t& ctx) const
-{
+constr_lambda::check(const type_context_t& ctx) const {
 	type_context_t new_ctx = ctx;
 	for (const auto& arg : args_) {
 		type_context_t new_ctx = ctx.push_local(arg.name ? *arg.name : "_", arg.type);
@@ -449,8 +398,7 @@ constr_lambda::check(const type_context_t& ctx) const
 }
 
 constr_t
-constr_lambda::shift(std::size_t limit, int dir) const
-{
+constr_lambda::shift(std::size_t limit, int dir) const {
 	std::vector<formal_arg_t> args;
 	bool change = false;
 
@@ -474,27 +422,31 @@ constr_lambda::shift(std::size_t limit, int dir) const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_let
 
-constr_let::~constr_let()
-{
+constr_let::~constr_let() {
 }
 
-constr_let::constr_let(std::optional<std::string> varname, constr_t value, constr_t body)
-	: varname_(std::move(varname))
-	, value_(std::move(value))
-	, body_(std::move(body))
-{
+constr_let::constr_let(
+	std::optional<std::string> varname,
+	constr_t value,
+	constr_t type,
+	constr_t body
+) : varname_(std::move(varname)),
+	value_(std::move(value)),
+	type_(std::move(type)),
+	body_(std::move(body)) {
 }
 
 void
-constr_let::format(std::string& out) const
-{
+constr_let::format(std::string& out) const {
 	out += "let ";
 	if (varname_) {
 		out += *varname_;
 	} else {
 		out += "_";
 	}
-	out+= " := ";
+	out += " : ";
+	type_.format(out);
+	out += " := ";
 	value_.format(out);
 	out += " in (";
 	body_.format(out);
@@ -502,31 +454,29 @@ constr_let::format(std::string& out) const
 }
 
 bool
-constr_let::operator==(const constr_base& other) const noexcept
-{
+constr_let::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_let = dynamic_cast<const constr_let*>(&other)) {
-		return value_ == other_let->value_ && body_ == other_let->body_;
+		return value_ == other_let->value_ && type_ == other_let->type_ && body_ == other_let->body_;
 	} else {
 		return false;
 	}
 }
 
 constr_t
-constr_let::check(const type_context_t& ctx) const
-{
+constr_let::check(const type_context_t& ctx) const {
 	type_context_t new_ctx = ctx.push_local(varname_ ? *varname_ : "_", value_.check(ctx));
 	return body_.check(new_ctx);
 }
 
 constr_t
-constr_let::shift(std::size_t limit, int dir) const
-{
+constr_let::shift(std::size_t limit, int dir) const {
 	auto value = value_.shift(limit, dir);
+	auto type = type_.shift(limit, dir);
 	auto body = body_.shift(limit + 1, dir);
-	if (value.repr() != value_.repr() || body.repr() != body_.repr()) {
-		return constr_t(std::make_shared<constr_let>(varname_, std::move(value), std::move(body)));
+	if (value.repr() != value_.repr() || type.repr() != type_.repr() || body.repr() != body_.repr()) {
+		return constr_t(std::make_shared<constr_let>(varname_, std::move(value), std::move(type), std::move(body)));
 	} else {
 		return constr_t(shared_from_this());
 	}
@@ -535,19 +485,17 @@ constr_let::shift(std::size_t limit, int dir) const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_apply
 
-constr_apply::~constr_apply()
-{
+constr_apply::~constr_apply() {
 }
 
-constr_apply::constr_apply(constr_t fn, std::vector<constr_t> args)
-	: fn_(std::move(fn))
-	, args_(std::move(args))
-{
+constr_apply::constr_apply(
+	constr_t fn,
+	std::vector<constr_t> args
+) : fn_(std::move(fn)) , args_(std::move(args)) {
 }
 
 void
-constr_apply::format(std::string& out) const
-{
+constr_apply::format(std::string& out) const {
 	out += '(';
 	fn_.format(out);
 	for (const auto& arg : args()) {
@@ -558,8 +506,7 @@ constr_apply::format(std::string& out) const
 }
 
 bool
-constr_apply::operator==(const constr_base& other) const noexcept
-{
+constr_apply::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_apply = dynamic_cast<const constr_apply*>(&other)) {
@@ -570,8 +517,7 @@ constr_apply::operator==(const constr_base& other) const noexcept
 }
 
 constr_t
-constr_apply::check(const type_context_t& ctx) const
-{
+constr_apply::check(const type_context_t& ctx) const {
 	auto fntype = fn_.check(ctx);
 	std::vector<formal_arg_t> prod_args;
 
@@ -602,8 +548,7 @@ constr_apply::check(const type_context_t& ctx) const
 }
 
 constr_t
-constr_apply::simpl() const
-{
+constr_apply::simpl() const {
 	if (auto fnlambda = dynamic_cast<const constr_lambda*>(fn_.repr().get())) {
 		std::size_t nsubst = std::min(args().size(), fnlambda->args().size());
 		std::vector<formal_arg_t> residual_formal_args(fnlambda->args().begin() + nsubst, fnlambda->args().end());
@@ -626,8 +571,7 @@ constr_apply::simpl() const
 }
 
 constr_t
-constr_apply::shift(std::size_t limit, int dir) const
-{
+constr_apply::shift(std::size_t limit, int dir) const {
 	auto fn = fn_.shift(limit, dir);
 	bool change = fn.repr() != fn_.repr();
 
@@ -649,18 +593,18 @@ constr_apply::shift(std::size_t limit, int dir) const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_cast
 
-constr_cast::~constr_cast()
-{
+constr_cast::~constr_cast() {
 }
 
-constr_cast::constr_cast(constr_t term, kind_type kind, constr_t typeterm)
-	: term_(std::move(term)), kind_(kind), typeterm_(std::move(typeterm))
-{
+constr_cast::constr_cast(
+	constr_t term,
+	kind_type kind,
+	constr_t typeterm
+) : term_(std::move(term)), kind_(kind), typeterm_(std::move(typeterm)) {
 }
 
 void
-constr_cast::format(std::string& out) const
-{
+constr_cast::format(std::string& out) const {
 	out += "Cast(";
 	term_.format(out);
 	out += ",";
@@ -688,8 +632,7 @@ constr_cast::format(std::string& out) const
 }
 
 bool
-constr_cast::operator==(const constr_base& other) const noexcept
-{
+constr_cast::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_cast = dynamic_cast<const constr_cast*>(&other)) {
@@ -700,14 +643,12 @@ constr_cast::operator==(const constr_base& other) const noexcept
 }
 
 constr_t
-constr_cast::check(const type_context_t& ctx) const
-{
+constr_cast::check(const type_context_t& ctx) const {
 	return term_.check(ctx);
 }
 
 constr_t
-constr_cast::shift(std::size_t limit, int dir) const
-{
+constr_cast::shift(std::size_t limit, int dir) const {
 	auto term = term_.shift(limit, dir);
 	auto typeterm = typeterm_.shift(limit, dir);
 	if (term.repr() != term_.repr() || typeterm.repr() != typeterm_.repr()) {
@@ -720,20 +661,18 @@ constr_cast::shift(std::size_t limit, int dir) const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_match
 
-constr_match::~constr_match()
-{
+constr_match::~constr_match() {
 }
 
-constr_match::constr_match(constr_t restype, constr_t arg, std::vector<match_branch_t> branches)
-	: restype_(std::move(restype))
-	, arg_(std::move(arg))
-	, branches_(std::move(branches))
-{
+constr_match::constr_match(
+	constr_t restype,
+	constr_t arg,
+	std::vector<match_branch_t> branches
+) : restype_(std::move(restype)), arg_(std::move(arg)), branches_(std::move(branches)) {
 }
 
 void
-constr_match::format(std::string& out) const
-{
+constr_match::format(std::string& out) const {
 	out += "match ";
 	arg_.format(out);
 	out += " restype ";
@@ -750,8 +689,7 @@ constr_match::format(std::string& out) const
 }
 
 bool
-constr_match::operator==(const constr_base& other) const noexcept
-{
+constr_match::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_match = dynamic_cast<const constr_match*>(&other)) {
@@ -762,15 +700,13 @@ constr_match::operator==(const constr_base& other) const noexcept
 }
 
 constr_t
-constr_match::check(const type_context_t& ctx) const
-{
+constr_match::check(const type_context_t& ctx) const {
 	auto argtype = arg_.check(ctx);
 	return local_subst(restype_, 0, {argtype});
 }
 
 constr_t
-constr_match::shift(std::size_t limit, int dir) const
-{
+constr_match::shift(std::size_t limit, int dir) const {
 	bool diff = false;
 
 	auto restype = restype_.shift(limit + 1, dir);
@@ -795,18 +731,17 @@ constr_match::shift(std::size_t limit, int dir) const
 ////////////////////////////////////////////////////////////////////////////////
 // constr_fix
 
-constr_fix::~constr_fix()
-{
+constr_fix::~constr_fix() {
 }
 
-constr_fix::constr_fix(std::size_t index, std::shared_ptr<const fix_group_t> group)
-	: index_(index), group_(std::move(group))
-{
+constr_fix::constr_fix(
+	std::size_t index,
+	std::shared_ptr<const fix_group_t> group
+) : index_(index), group_(std::move(group)) {
 }
 
 void
-constr_fix::format(std::string& out) const
-{
+constr_fix::format(std::string& out) const {
 	out += "(fix ";
 	bool first = true;
 	for (const auto& function : group_->functions) {
@@ -834,8 +769,7 @@ constr_fix::format(std::string& out) const
 }
 
 bool
-constr_fix::operator==(const constr_base& other) const noexcept
-{
+constr_fix::operator==(const constr_base& other) const noexcept {
 	if (this == &other) {
 		return true;
 	} else if (auto other_fix = dynamic_cast<const constr_fix*>(&other)) {
@@ -846,15 +780,13 @@ constr_fix::operator==(const constr_base& other) const noexcept
 }
 
 constr_t
-constr_fix::check(const type_context_t& ctx) const
-{
+constr_fix::check(const type_context_t& ctx) const {
 	const auto& fn = group_->functions[index_];
 	return builder::product(fn.args, fn.restype);
 }
 
 constr_t
-constr_fix::shift(std::size_t limit, int dir) const
-{
+constr_fix::shift(std::size_t limit, int dir) const {
 	bool changed = false;
 	fix_group_t new_group;
 	limit += group_->functions.size();
@@ -885,81 +817,73 @@ constr_fix::shift(std::size_t limit, int dir) const
 namespace builder {
 
 constr_t
-local(std::string name, std::size_t index)
-{
+local(std::string name, std::size_t index) {
 	return constr_t(std::make_shared<constr_local>(std::move(name), std::move(index)));
 }
 
 constr_t
-global(std::string name)
-{
+global(std::string name) {
 	return constr_t(std::make_shared<constr_global>(std::move(name)));
 }
 
 constr_t
-builtin_set()
-{
+builtin_set() {
 	return constr_t(constr_builtin::get_set());
 }
 
 constr_t
-builtin_prop()
-{
+builtin_prop() {
 	return constr_t(constr_builtin::get_prop());
 }
 
 constr_t
-builtin_sprop()
-{
+builtin_sprop() {
 	return constr_t(constr_builtin::get_sprop());
 }
 
 constr_t
-builtin_type()
-{
+builtin_type() {
 	return constr_t(constr_builtin::get_type());
 }
 
 constr_t
-product(std::vector<formal_arg_t> args, constr_t restype)
-{
+product(std::vector<formal_arg_t> args, constr_t restype) {
 	return constr_t(std::make_shared<constr_product>(std::move(args), std::move(restype)));
 }
 
 constr_t
-lambda(std::vector<formal_arg_t> args, constr_t body)
-{
+lambda(std::vector<formal_arg_t> args, constr_t body) {
 	return constr_t(std::make_shared<constr_lambda>(std::move(args), std::move(body)));
 }
 
 constr_t
-let(std::optional<std::string> varname, constr_t value, constr_t body)
-{
-	return constr_t(std::make_shared<constr_let>(std::move(varname), std::move(value), std::move(body)));
+let(
+	std::optional<std::string> varname,
+	constr_t value,
+	constr_t type,
+	constr_t body
+) {
+	return constr_t(std::make_shared<constr_let>(std::move(varname), std::move(value), std::move(type), std::move(body)));
 }
 
 constr_t
-apply(constr_t fn, std::vector<constr_t> args)
-{
+apply(constr_t fn, std::vector<constr_t> args) {
 	return constr_t(std::make_shared<constr_apply>(std::move(fn), std::move(args)));
 }
 
 constr_t
-cast(constr_t term, constr_cast::kind_type kind, constr_t typeterm)
-{
+cast(constr_t term, constr_cast::kind_type kind, constr_t typeterm) {
 	return constr_t(std::make_shared<constr_cast>(std::move(term), kind, std::move(typeterm)));
 }
 
 
 constr_t
-match(constr_t restype, constr_t arg, std::vector<match_branch_t> branches)
-{
+match(constr_t restype, constr_t arg, std::vector<match_branch_t> branches) {
 	return constr_t(std::make_shared<constr_match>(std::move(restype), std::move(arg), std::move(branches)));
 }
 
 constr_t
-fix(std::size_t index, std::shared_ptr<const fix_group_t> group)
-{
+fix(std::size_t index, std::shared_ptr<const fix_group_t> group) {
 	return constr_t(std::make_shared<constr_fix>(index, std::move(group)));
 }
 

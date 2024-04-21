@@ -23,8 +23,7 @@ using sym = std::variant<sym_fix_function, sym_spec_arg, sym_none>;
 using sym_stack = lazy_stack<sym>;
 
 inline std::ostream&
-operator<<(std::ostream& os, const sym& s)
-{
+operator<<(std::ostream& os, const sym& s) {
 	if (auto fn = std::get_if<sym_fix_function>(&s)) {
 		os << "fn" << fn->index;
 	} else if (auto arg = std::get_if<sym_spec_arg>(&s)) {
@@ -56,20 +55,17 @@ struct fix_closure_state {
 };
 
 inline bool
-operator==(const fix_spec_info::function& left, const fix_spec_info::function& right) noexcept
-{
+operator==(const fix_spec_info::function& left, const fix_spec_info::function& right) noexcept {
 	return left.spec_args == right.spec_args;
 }
 
 inline bool
-operator!=(const fix_spec_info::function& left, const fix_spec_info::function& right) noexcept
-{
+operator!=(const fix_spec_info::function& left, const fix_spec_info::function& right) noexcept {
 	return !(left == right);
 }
 
 inline std::ostream&
-operator<<(std::ostream& os, const fix_spec_info::function& info)
-{
+operator<<(std::ostream& os, const fix_spec_info::function& info) {
 	for (const auto& arg : info.spec_args) {
 		if (arg) {
 			os << *arg << " ";
@@ -83,8 +79,8 @@ operator<<(std::ostream& os, const fix_spec_info::function& info)
 void
 fix_closure_state::add_call_state(
 	std::size_t index,
-	fix_spec_info::function info)
-{
+	fix_spec_info::function info
+) {
 	if (call_state[index]) {
 		if (*call_state[index] != info) {
 			inconsistent = true;
@@ -100,8 +96,8 @@ visit_for_fix_closure_state(
 	const constr_t& c,
 	fix_closure_state& state,
 	const sym_stack& locals,
-	const sym_stack& apply_args)
-{
+	const sym_stack& apply_args
+) {
 	if (auto l = c.as_local()) {
 		if (l->index() < locals.size()) {
 			auto sym = locals.at(l->index());
@@ -198,8 +194,7 @@ visit_for_fix_closure_state(
 }
 
 void
-vec_move_app(std::vector<std::size_t>& dst, std::vector<std::size_t>& src)
-{
+vec_move_app(std::vector<std::size_t>& dst, std::vector<std::size_t>& src) {
 	dst.insert(dst.end(), std::begin(src), std::end(src));
 	src.clear();
 }
@@ -210,8 +205,8 @@ std::optional<fix_spec_info>
 compute_fix_specialization_closure(
 	const fix_group_t& group,
 	std::size_t fn_index,
-	std::vector<std::optional<std::size_t>> seed_arg)
-{
+	std::vector<std::optional<std::size_t>> seed_arg
+) {
 	fix_closure_state state;
 	for (std::size_t n = 0; n < group.functions.size(); ++n) {
 		state.arg_count.push_back(group.functions[n].args.size());
@@ -273,38 +268,36 @@ using replace_stack = lazy_stack<replace>;
 
 class specialize_visitor final : public transform_visitor {
 public:
-	~specialize_visitor() override
-	{
+	~specialize_visitor() override {
 	}
 
 	specialize_visitor(
 		std::size_t depth,
 		std::size_t extra_shift,
-		replace_stack locals)
-		: depth_(depth), extra_shift_(extra_shift), locals_(std::move(locals))
-	{
+		replace_stack locals
+	) : depth_(depth),
+		extra_shift_(extra_shift),
+		locals_(std::move(locals)) {
 	}
 
 	void
 	push_local(
 		const std::string* name,
 		const constr_t* type,
-		const constr_t* value)
-	{
+		const constr_t* value
+	) {
 		locals_ = locals_.push(replace_shift{extra_shift_});
 		++depth_;
 	}
 
 	void
-	pop_local()
-	{
+	pop_local() {
 		locals_ = locals_.pop();
 		--depth_;
 	}
 
 	std::optional<constr_t>
-	handle_local(const std::string& name, std::size_t index) override
-	{
+	handle_local(const std::string& name, std::size_t index) override {
 		if (index >= locals_.size()) {
 			return builder::local(name, index - extra_shift_);
 		} else {
@@ -320,8 +313,7 @@ public:
 	}
 
 	std::optional<constr_t>
-	handle_apply(const constr_t& fn, const std::vector<constr_t>& args) override
-	{
+	handle_apply(const constr_t& fn, const std::vector<constr_t>& args) override {
 		if (auto lambda = fn.as_lambda()) {
 			(void) lambda;
 			// XXX: conditionally resolve apply/lambda
@@ -344,8 +336,8 @@ apply_fix_specialization(
 	const fix_group_t& group,
 	const fix_spec_info& info,
 	const std::vector<constr_t>& spec_args,
-	const std::function<std::string(std::size_t)>& namegen)
-{
+	const std::function<std::string(std::size_t)>& namegen
+) {
 	// Build the expressions for the replacement functions.
 	replace_stack fix_locals;
 	for (std::size_t fn_index = 0; fn_index < group.functions.size(); ++fn_index) {

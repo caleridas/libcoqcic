@@ -35,7 +35,6 @@ constr_from_sexpr_str(const std::string& s);
 from_sexpr_str_result<sfb_t>
 sfb_from_sexpr_str(const std::string& s);
 
-
 }  // namespace coqcic
 
 #endif  // COQCIC_FROM_SEXPR_H

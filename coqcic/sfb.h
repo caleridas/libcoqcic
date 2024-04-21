@@ -22,23 +22,19 @@ class sfb_t {
 public:
 	explicit
 	inline
-	sfb_t(std::shared_ptr<const sfb_base> repr) noexcept
-		: repr_(std::move(repr))
-	{
+	sfb_t(std::shared_ptr<const sfb_base> repr) noexcept : repr_(std::move(repr)) {
 	}
 
 	sfb_t() noexcept = default;
 
 	inline sfb_t&
-	operator=(sfb_t other) noexcept
-	{
+	operator=(sfb_t other) noexcept {
 		swap(other);
 		return *this;
 	}
 
 	inline void
-	swap(sfb_t& other) noexcept
-	{
+	swap(sfb_t& other) noexcept {
 		repr_.swap(other.repr_);
 	}
 
@@ -49,8 +45,7 @@ public:
 	operator==(const sfb_t& other) const noexcept;
 
 	inline
-	bool operator!=(const sfb_t& other) const
-	{
+	bool operator!=(const sfb_t& other) const {
 		return ! (*this == other);
 	}
 
@@ -59,14 +54,12 @@ public:
 
 	const
 	std::shared_ptr<const sfb_base>&
-	repr() const noexcept
-	{
+	repr() const noexcept {
 		return repr_;
 	}
 
 	std::shared_ptr<const sfb_base>
-	extract_repr() && noexcept
-	{
+	extract_repr() && noexcept {
 		return std::move(repr_);
 	}
 
@@ -90,14 +83,12 @@ struct constructor_t {
 	constr_t type;
 
 	inline bool
-	operator==(const constructor_t& other) const noexcept
-	{
+	operator==(const constructor_t& other) const noexcept {
 		return id == other.id && type == other.type;
 	}
 
 	inline bool
-	operator!=(const constructor_t& other) const noexcept
-	{
+	operator!=(const constructor_t& other) const noexcept {
 		return !(*this == other);
 	}
 };
@@ -111,20 +102,20 @@ struct one_inductive_t {
 	one_inductive_t(
 		std::string init_id,
 		constr_t init_type,
-		std::vector<constructor_t> init_constructors) noexcept
-		: id(std::move(init_id)), type(std::move(init_type)), constructors(std::move(init_constructors))
-	{
+		std::vector<constructor_t> init_constructors
+	) noexcept :
+		id(std::move(init_id)),
+		type(std::move(init_type)),
+		constructors(std::move(init_constructors)) {
 	}
 
 	inline bool
-	operator==(const one_inductive_t& other) const noexcept
-	{
+	operator==(const one_inductive_t& other) const noexcept {
 		return id == other.id && type == other.type && constructors == other.constructors;
 	}
 
 	inline bool
-	operator!=(const one_inductive_t& other) const noexcept
-	{
+	operator!=(const one_inductive_t& other) const noexcept {
 		return !(*this == other);
 	}
 };
@@ -151,9 +142,11 @@ public:
 	~sfb_definition() override;
 
 	inline
-	sfb_definition(std::string id, constr_t type, constr_t value) noexcept
-		: id_(std::move(id)), type_(std::move(type)), value_(std::move(value))
-	{
+	sfb_definition(std::string id, constr_t type, constr_t value
+	) noexcept :
+		id_(std::move(id)),
+		type_(std::move(type)),
+		value_(std::move(value)) {
 	}
 
 	void
@@ -163,20 +156,17 @@ public:
 	operator==(const sfb_base& other) const noexcept override;
 
 	inline const std::string&
-	id() const noexcept
-	{
+	id() const noexcept {
 		return id_;
 	}
 
 	inline const constr_t&
-	type() const noexcept
-	{
+	type() const noexcept {
 		return type_;
 	}
 
 	inline const constr_t&
-	value() const noexcept
-	{
+	value() const noexcept {
 		return value_;
 	}
 
@@ -191,8 +181,12 @@ public:
 	~sfb_axiom() override;
 
 	inline
-	sfb_axiom(std::string id, constr_t type) noexcept
-		: id_(std::move(id)), type_(std::move(type))
+	sfb_axiom(
+		std::string id,
+		constr_t type
+	) noexcept :
+		id_(std::move(id)),
+		type_(std::move(type))
 	{
 	}
 
@@ -203,14 +197,12 @@ public:
 	operator==(const sfb_base& other) const noexcept override;
 
 	inline const std::string&
-	id() const noexcept
-	{
+	id() const noexcept {
 		return id_;
 	}
 
 	inline const constr_t&
-	type() const noexcept
-	{
+	type() const noexcept {
 		return type_;
 	}
 
@@ -224,9 +216,9 @@ public:
 	~sfb_fixpoint() override;
 
 	inline explicit
-	sfb_fixpoint(fix_group_t fix_group) noexcept
-		: fix_group_(std::move(fix_group))
-	{
+	sfb_fixpoint(
+		fix_group_t fix_group
+	) noexcept : fix_group_(std::move(fix_group)) {
 	}
 
 	void
@@ -236,8 +228,7 @@ public:
 	operator==(const sfb_base& other) const noexcept override;
 
 	inline const fix_group_t&
-	fix_group() const noexcept
-	{
+	fix_group() const noexcept {
 		return fix_group_;
 	}
 
@@ -250,9 +241,9 @@ public:
 	~sfb_inductive() override;
 
 	inline
-	sfb_inductive(std::vector<one_inductive_t> one_inductives) noexcept
-		: one_inductives_(std::move(one_inductives))
-	{
+	sfb_inductive(
+		std::vector<one_inductive_t> one_inductives
+	) noexcept : one_inductives_(std::move(one_inductives)) {
 	}
 
 	void
@@ -262,8 +253,7 @@ public:
 	operator==(const sfb_base& other) const noexcept override;
 
 	inline const std::vector<one_inductive_t>&
-	one_inductives() const noexcept
-	{
+	one_inductives() const noexcept {
 		return one_inductives_;
 	}
 
@@ -278,14 +268,12 @@ struct modexpr {
 	std::vector<std::string> args;
 
 	inline bool
-	operator==(const modexpr& other) const noexcept
-	{
+	operator==(const modexpr& other) const noexcept {
 		return name == other.name && args == other.args;
 	}
 
 	inline bool
-	operator!=(const modexpr& other) const noexcept
-	{
+	operator!=(const modexpr& other) const noexcept {
 		return !(*this == other);
 	}
 
@@ -302,9 +290,8 @@ public:
 	inline
 	module_body(
 		std::vector<std::pair<std::string, modexpr>> parameters,
-		std::shared_ptr<const module_body_repr> repr) noexcept
-		: parameters_(std::move(parameters)), repr_(std::move(repr))
-	{
+		std::shared_ptr<const module_body_repr> repr
+	) noexcept : parameters_(std::move(parameters)), repr_(std::move(repr)) {
 	}
 
 	module_body() noexcept = default;
@@ -314,8 +301,7 @@ public:
 	inline module_body& operator=(module_body&& other) noexcept = default;
 
 	inline void
-	swap(module_body& other) noexcept
-	{
+	swap(module_body& other) noexcept {
 		parameters_.swap(other.parameters_);
 		repr_.swap(other.repr_);
 	}
@@ -327,8 +313,7 @@ public:
 	operator==(const module_body& other) const noexcept;
 
 	inline
-	bool operator!=(const module_body& other) const
-	{
+	bool operator!=(const module_body& other) const {
 		return ! (*this == other);
 	}
 
@@ -337,21 +322,18 @@ public:
 
 	inline
 	const std::vector<std::pair<std::string, modexpr>>&
-	parameters() const noexcept
-	{
+	parameters() const noexcept {
 		return parameters_;
 	}
 
 	inline const
 	std::shared_ptr<const module_body_repr>&
-	repr() const noexcept
-	{
+	repr() const noexcept {
 		return repr_;
 	}
 
 	inline std::shared_ptr<const module_body_repr>
-	extract_repr() && noexcept
-	{
+	extract_repr() && noexcept {
 		return std::move(repr_);
 	}
 
@@ -383,9 +365,8 @@ public:
 
 	explicit inline
 	module_body_algebraic_repr(
-		modexpr expr) noexcept
-		: expr_(std::move(expr))
-	{
+		modexpr expr
+	) noexcept : expr_(std::move(expr)) {
 	}
 
 	void
@@ -409,9 +390,8 @@ public:
 	inline
 	module_body_struct_repr(
 		std::optional<modexpr> type,
-		std::vector<sfb_t> body) noexcept
-		: type_(std::move(type)), body_(std::move(body))
-	{
+		std::vector<sfb_t> body
+	) noexcept : type_(std::move(type)), body_(std::move(body)) {
 	}
 
 	void
@@ -433,9 +413,10 @@ public:
 	~sfb_module() override;
 
 	inline
-	sfb_module(std::string id, module_body body) noexcept
-		: id_(std::move(id)), body_(std::move(body))
-	{
+	sfb_module(
+		std::string id,
+		module_body body
+	) noexcept : id_(std::move(id)), body_(std::move(body)) {
 	}
 
 	void
@@ -457,9 +438,10 @@ public:
 	~sfb_module_type() override;
 
 	inline
-	sfb_module_type(std::string id, module_body body) noexcept
-		: id_(std::move(id)), body_(std::move(body))
-	{
+	sfb_module_type(
+		std::string id,
+		module_body body
+	) noexcept : id_(std::move(id)), body_(std::move(body)) {
 	}
 
 	void
@@ -478,44 +460,37 @@ private:
 };
 
 inline const sfb_definition*
-sfb_t::as_definition() const noexcept
-{
+sfb_t::as_definition() const noexcept {
 	return dynamic_cast<const sfb_definition*>(repr_.get());
 }
 
 inline const sfb_axiom*
-sfb_t::as_axiom() const noexcept
-{
+sfb_t::as_axiom() const noexcept {
 	return dynamic_cast<const sfb_axiom*>(repr_.get());
 }
 
 inline const sfb_fixpoint*
-sfb_t::as_fixpoint() const noexcept
-{
+sfb_t::as_fixpoint() const noexcept {
 	return dynamic_cast<const sfb_fixpoint*>(repr_.get());
 }
 
 inline const sfb_inductive*
-sfb_t::as_inductive() const noexcept
-{
+sfb_t::as_inductive() const noexcept {
 	return dynamic_cast<const sfb_inductive*>(repr_.get());
 }
 
 inline const sfb_module*
-sfb_t::as_module() const noexcept
-{
+sfb_t::as_module() const noexcept {
 	return dynamic_cast<const sfb_module*>(repr_.get());
 }
 
 inline const sfb_module_type*
-sfb_t::as_module_type() const noexcept
-{
+sfb_t::as_module_type() const noexcept {
 	return dynamic_cast<const sfb_module_type*>(repr_.get());
 }
 
 template<typename Visitor>
-inline auto
-sfb_t::visit(Visitor&& vis)
+inline auto sfb_t::visit(Visitor&& vis)
 {
 	if (auto def = as_definition()) {
 		return vis(*def);

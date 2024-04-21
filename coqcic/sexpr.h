@@ -83,8 +83,7 @@ public:
 	copy() const = 0;
 
 	inline std::size_t
-	location() const noexcept
-	{
+	location() const noexcept {
 		return location_;
 	}
 
@@ -97,9 +96,10 @@ public:
 	~sexpr_terminal() override;
 
 	inline
-	sexpr_terminal(std::string value, std::size_t location)
-		: sexpr_repr(location), value_(std::move(value))
-	{
+	sexpr_terminal(
+		std::string value,
+		std::size_t location
+	) : sexpr_repr(location), value_(std::move(value)) {
 	}
 
 	void
@@ -110,8 +110,7 @@ public:
 
 	inline
 	const std::string&
-	value() const noexcept
-	{
+	value() const noexcept {
 		return value_;
 	}
 
@@ -124,9 +123,11 @@ public:
 	~sexpr_compound() override;
 
 	inline
-	sexpr_compound(std::string kind, std::vector<sexpr> args, std::size_t location)
-		: sexpr_repr(location), kind_(std::move(kind)), args_(std::move(args))
-	{
+	sexpr_compound(
+		std::string kind,
+		std::vector<sexpr> args,
+		std::size_t location
+	) : sexpr_repr(location), kind_(std::move(kind)), args_(std::move(args)) {
 	}
 
 	void
@@ -136,15 +137,13 @@ public:
 	copy() const override;
 
 	inline const std::string&
-	kind() const noexcept
-	{
+	kind() const noexcept {
 		return kind_;
 	}
 
 	inline
 	const std::vector<sexpr>&
-	args() const noexcept
-	{
+	args() const noexcept {
 		return args_;
 	}
 
@@ -154,58 +153,49 @@ private:
 };
 
 inline
-sexpr::sexpr(const sexpr& other)
-	: repr_(other.repr_->copy())
-{
+sexpr::sexpr(const sexpr& other) : repr_(other.repr_->copy()) {
 }
 
 inline
 sexpr&
-sexpr::operator=(const sexpr& other)
-{
+sexpr::operator=(const sexpr& other) {
 	repr_ = other.repr_->copy();
 	return *this;
 }
 
 inline
 const sexpr_terminal*
-sexpr::as_terminal() const noexcept
-{
+sexpr::as_terminal() const noexcept {
 	return dynamic_cast<const sexpr_terminal*>(repr_.get());
 }
 
 inline
 const sexpr_compound*
-sexpr::as_compound() const noexcept
-{
+sexpr::as_compound() const noexcept {
 	return dynamic_cast<const sexpr_compound*>(repr_.get());
 }
 
 inline
 void
-sexpr::format(std::ostream& os) const
-{
+sexpr::format(std::ostream& os) const {
 	repr_->format(os);
 }
 
 inline
 std::size_t
-sexpr::location() const noexcept
-{
+sexpr::location() const noexcept {
 	return repr_->location();
 }
 
 inline
 sexpr
-sexpr::make_terminal(std::string value, std::size_t location)
-{
+sexpr::make_terminal(std::string value, std::size_t location) {
 	return sexpr(std::make_unique<sexpr_terminal>(std::move(value), location));
 }
 
 inline
 sexpr
-sexpr::make_compound(std::string kind, std::vector<sexpr> args, std::size_t location)
-{
+sexpr::make_compound(std::string kind, std::vector<sexpr> args, std::size_t location) {
 	return sexpr(std::make_unique<sexpr_compound>(std::move(kind), std::move(args), location));
 }
 
