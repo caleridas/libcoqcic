@@ -49,8 +49,8 @@ A _term_ s-expression is one of either:
 - [Int](#int)
 - [Float](#float)
 
-XXX: There are a few more possible constructs that are not used anywhere in
-the code.
+Some of these constructs are not used anywhere in code (yet), and additional
+constructs may be added following future Coq changes.
 
 ### <a name="sort">Sort</a>
 
