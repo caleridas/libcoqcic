@@ -42,6 +42,7 @@ A _term_ s-expression is one of either:
 - [Lambda](#lambda)
 - [Let](#let)
 - [Apply](#app)
+- [Cast](#cast)
 - [Case](#case)
 - [Fix](#fix)
 - [Cofix](#cofix)
@@ -110,6 +111,14 @@ Where:
 
 - _fn_ is of type [term](#term) and identifies the function
 - _arg_ is of type [term](#term) and identifies the argument to be applied to _fn_
+
+### <a name="cast">Cast</a>
+
+(**Cast** _term_ _kind_ _type_)
+
+- _term_ is of type [term](#term) and identifies the term to be cast
+- _kind_ is the kind of cast and must be one of: **VMcast** **DEFAULTcast** **REVERTcast** **NATIVEcast**
+- _type_ is of type [term](#term) and identifies the type of the resulting term
 
 ### <a name="case">Case</a>
 
