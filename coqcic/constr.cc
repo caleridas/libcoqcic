@@ -11,37 +11,198 @@ namespace coqcic {
 ////////////////////////////////////////////////////////////////////////////////
 // constr
 
+/**
+	\class constr_t
+	\brief A coqcic term construction
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents a term construct in the Coq calculus of
+	inductive constructions.
+*/
+
+/**
+	\fn constr_t constr_t::operator=(constr_t other)
+	\brief Assign constr
+*/
+
+/**
+	\fn constr_t::swap
+	\brief Swaps two constr
+*/
+
+/**
+	\brief Generates human-readable representation
+
+	\param out
+		String to append representation to
+*/
 void
 constr_t::format(std::string& out) const {
 	repr_->format(out);
 }
 
+/**
+	\brief Compares for equality with other term
+	\param other
+		Term to compare to
+	\returns
+		Equality comparison result
+
+	Compares two term constructions for equality. Note
+	that this checks for strict structural equality (i.e.
+	grouping of nested lambda/product is significant), but
+	does not check for names of local variables (just their
+	de Bruijn indices).
+*/
 bool
 constr_t::operator==(const constr_t& other) const {
 	return repr_ == other.repr_ || *repr_ == *other.repr_;
 }
 
+/**
+	\brief Checks type of constr
+	\param ctx
+		Typing context.
+
+	\returns
+		Expression representing type of object.
+
+	Computes an expression for the type of this object,
+	within the given typing context. The typing context
+	must be able to resolve all global (and ubound local)
+	variables.
+*/
 constr_t
 constr_t::check(const type_context_t& ctx) const {
 	return repr_->check(ctx);
 }
 
+/**
+	\brief Simplifies term.
+
+	\returns
+		Simplified term.
+
+	Resolves apply / lambda pairs to produce a simplified term.
+*/
 constr_t
 constr_t::simpl() const {
 	return repr_->simpl();
 }
+
+/**
+	\brief Shifts de Bruijn indices.
+
+	\param limit
+		Lower limit of de Bruijn indices to be shifted. All indices
+		>= limit will be shifted.
+	\param dir
+		Offset to be added to de Bruijn indices.
+
+	\returns
+		Modified term.
+
+	Shifts (subset of) de Bruijn indices occuring in term,
+	recursively. All indices >=limit (as viewed from root)
+	will be modified by the given offset. Note that this
+	can only ever affect "unbound" indices.
+
+	Example: Consider the term:
+
+		lambda (x : nat) : nat := '0 + '1
+
+	The body of the lambda expression has two local
+	variable references: '0 refers to its defined
+	formal argument, while '1 refers to the zeroe'th
+	object outside this term. Calling "shift(0, +1)"
+	results in:
+
+		lambda (x : nat) : nat := '0 + '2
+
+	Calling "shift(1, +1)" results in:
+
+		lambda (x : nat) : nat := '0 + '1
+
+	The latter operation does not cause a change because '1 inside
+	the lambda abstraction refers to the zeroe'th unbound variable
+	for the term as a whole.
+*/
 
 constr_t
 constr_t::shift(std::size_t limit, int dir) const {
 	return repr_->shift(limit, dir);
 }
 
+/**
+	\brief Generates a debug string.
+
+	\returns Human-readable string for diagnostic purposes.
+
+	Generates a string that may be useful in understanding the
+	structure of a term construction for error diagnostics.
+*/
 std::string
 constr_t::debug_string() const {
 	std::string result;
 	format(result);
 	return result;
 }
+
+/**
+	\fn constr_t::visit
+	\brief Discriminates kind of constr
+
+	\param vis
+		Visitor functional. Should be an overloaded / type generic lambda.
+	\returns
+		Value returned by the visitor
+
+	Determines the underlying kind of constr represented by this
+	object, and dispatches to the given visitor function with the
+	specific type of constr. See
+		\ref constr_local,
+		\ref constr_global,
+		\ref constr_builtin,
+		\ref constr_product,
+		\ref constr_lambda,
+		\ref constr_let,
+		\ref constr_apply,
+		\ref constr_cast,
+		\ref constr_match,
+		\ref constr_fix.
+
+	Canonically, the visitor should have the following structure:
+	\code
+		constr.visit(
+			[](const auto& const) {
+				using T = std::decay_t<decltype(arg)>;
+				if constexpr (std::is_same<T, coqcic::constr_local>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_global>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_builtin>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_product>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_lambda>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_let>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_apply>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_cast>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_match>()) {
+					...
+				} else if constexpr (std::is_same<T, coqcic::constr_fix>()) {
+					...
+				} else {
+					throw std::logic_error("non-exhaustice pattern matching on constr_t");
+				}
+			}
+		);
+	\endcode
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 // free functions on constr
@@ -82,8 +243,32 @@ collect_external_references(const constr_t& obj, std::size_t depth, std::vector<
 	}
 }
 
-// Collect the de Bruijn indices of all locals in this object that
-// are not resolvable within the construct itself.
+/**
+	\brief Collects unbound de Bruijn indices.
+
+	\param obj
+		Term to collect indices for.
+
+	\returns
+		Collection of unbound de Bruijn indices.
+
+	Returns all de Bruijn indices of local variable references
+	that cannot be resolved within the present term. This is equivalent
+	to specifying to "context stack" providing local variables that
+	would be required to evaluate this expression.
+
+	Example: Consider the term:
+
+		lambda (x : nat) : nat := '0 + '1
+
+	This would result in the following set of indices collected:
+
+		[0]
+
+	This represents the use of variable '1 which has index 1
+	inside the bound lambda, referring to index 0 for the term
+	as a whole.
+*/
 std::vector<std::size_t>
 collect_external_references(const constr_t& obj) {
 	std::vector<std::size_t> refs;
@@ -98,6 +283,34 @@ collect_external_references(const constr_t& obj) {
 ////////////////////////////////////////////////////////////////////////////////
 // type_context_t
 
+/**
+	\class type_context_t
+	\brief Typing context for type check operations
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents the context used in resolving the types of terms.
+	It needs to provide a way of resolving types of all referenced
+	global objects as well as all unbound locals.
+
+	Type resolution is done recursively, as needed. When resolving
+	products, lambdas etc that define new local variables, the
+	type context used in resolution of sub terms will be extended
+	accordingly.
+*/
+
+/**
+	\brief Creates expanded type context.
+	\param name
+		Name of local variable
+	\param type
+		Type of local variable
+	\returns
+		New type context with additional local variable.
+
+	Adds a new local variable to the type context, returns the
+	extended type context. This is used when recursively resolving
+	the types of sub-expressions for lambda, product etc constructions.
+*/
 type_context_t
 type_context_t::push_local(std::string name, constr_t type) const {
 	type_context_t new_ctx(*this);
@@ -108,6 +321,16 @@ type_context_t::push_local(std::string name, constr_t type) const {
 ////////////////////////////////////////////////////////////////////////////////
 // constr_base
 
+/**
+	\class constr_base
+	\brief Abstract base class for term constructions.
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Defines the base class for all constr representation subclasses.
+	Generally, this class is not used directly, refer to
+	\ref constr_t::visit and similar to discriminate the different
+	kinds of constrs.
+*/
 constr_base::~constr_base() {
 }
 
@@ -130,6 +353,20 @@ constr_base::repr() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 // constr_local
+
+/**
+	\class constr_local
+	\brief Local variable reference
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents a reference to an externally defined local variable
+	from a (nested) term. Certain constructs (e.g. lambda, product)
+	define formal arguments which can be referenced as a local
+	variable.
+
+	Each local is characterized is characterized by its "nesting depth",
+	also called "de Bruijn index".
+*/
 
 constr_local::~constr_local() {
 }
@@ -175,6 +412,15 @@ constr_local::shift(std::size_t limit, int dir) const {
 ////////////////////////////////////////////////////////////////////////////////
 // constr_global
 
+/**
+	\class constr_global
+	\brief Global object reference
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents a reference to a global object. The reference is always made
+	be the (fully qualified) name in string representation.
+*/
+
 constr_global::~constr_global() {
 }
 
@@ -204,6 +450,15 @@ constr_global::check(const type_context_t& ctx) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 // constr_builtin
+
+/**
+	\class constr_builtin
+	\brief Local variable reference
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	A builtin sort of the Coq calculus of inductive constructions.
+	These are <tt>Set</tt>, <tt>Prop</tt> and <tt>Type</tt> sorts.
+*/
 
 constr_builtin::~constr_builtin() {
 }
@@ -268,6 +523,16 @@ constr_builtin::get_type() {
 
 ////////////////////////////////////////////////////////////////////////////////
 // constr_product
+
+/**
+	\class constr_product
+	\brief Dependent product
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents a dependent product. This is the type of a lambda abstraction
+	with a number of formal arguments and specifies the computation of
+	the result type of the lambda expression.
+*/
 
 constr_product::~constr_product() {
 }
@@ -352,6 +617,16 @@ constr_product::shift(std::size_t limit, int dir) const {
 ////////////////////////////////////////////////////////////////////////////////
 // constr_lambda
 
+/**
+	\class constr_lambda
+	\brief Lambda abstraction
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents a lambda abstraction, i.e. a rule that describes how to
+	compute a value from specified formal arguments.
+*/
+
+
 constr_lambda::~constr_lambda() {
 }
 
@@ -422,6 +697,15 @@ constr_lambda::shift(std::size_t limit, int dir) const {
 ////////////////////////////////////////////////////////////////////////////////
 // constr_let
 
+/**
+	\class constr_let
+	\brief Let binding
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents a let binding: An expression is bound to a local variable which
+	can be referenced (possibly multiple times) in a sub expression.
+*/
+
 constr_let::~constr_let() {
 }
 
@@ -484,6 +768,15 @@ constr_let::shift(std::size_t limit, int dir) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 // constr_apply
+
+/**
+	\class constr_apply
+	\brief Functional application
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents functional application of a (function) term to
+	actual arguments.
+*/
 
 constr_apply::~constr_apply() {
 }
@@ -593,6 +886,15 @@ constr_apply::shift(std::size_t limit, int dir) const {
 ////////////////////////////////////////////////////////////////////////////////
 // constr_cast
 
+/**
+	\class constr_cast
+	\brief Cast expression
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents a cast expression.
+*/
+
+
 constr_cast::~constr_cast() {
 }
 
@@ -660,6 +962,16 @@ constr_cast::shift(std::size_t limit, int dir) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 // constr_match
+
+/**
+	\class constr_match
+	\brief Pattern matching expression
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents a pattern matching expression where an instance of an
+	inductive type is subjected to (exhaustive) case analysis of
+	all constructors of the underlying inductive type.
+*/
 
 constr_match::~constr_match() {
 }
@@ -730,6 +1042,14 @@ constr_match::shift(std::size_t limit, int dir) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 // constr_fix
+
+/**
+	\class constr_fix
+	\brief Fixpoint function
+	\headerfile coqcic/constr.h <coqcic/constr.h>
+
+	Represents an entry point into a bundle of mutually recursive functions.
+*/
 
 constr_fix::~constr_fix() {
 }

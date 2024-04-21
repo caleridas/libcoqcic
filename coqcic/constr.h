@@ -30,8 +30,6 @@ class constr_fix;
 
 class type_context_t;
 
-// A CIC constr, represented as one of the representation
-// classes above.
 class constr_t {
 public:
 	explicit
