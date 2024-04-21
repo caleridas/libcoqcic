@@ -455,7 +455,6 @@ public:
 
 private:
 	std::string id_;
-	// XXX: not quite correct -- can never have a type, must always be structural.
 	module_body body_;
 };
 
