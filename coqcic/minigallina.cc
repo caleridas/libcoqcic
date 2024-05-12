@@ -1176,7 +1176,9 @@ parse_sfb(
 
 			std::vector<one_inductive_t> oinds;
 
-			// Push the ids of the inductives as locals.
+			// Push the ids of the inductives as globals for resolving
+			// their type.
+			std::unordered_map<std::string, constr_t> inductive_globals;
 			for (const auto& oind : ast_oinds) {
 				std::vector<formal_arg_t> formargs;
 				for (const auto& ast_formarg : oind.args) {
@@ -1193,11 +1195,18 @@ parse_sfb(
 				}
 
 				auto restype = formargs.empty() ? type.move_value() : normalize(builder::product(formargs, type.move_value()));
-				locals_types = locals_types.push({oind.id, restype});
-				locals_map = locals_map.push(oind.id);
+				inductive_globals[oind.id] = restype;
 
 				oinds.push_back(one_inductive_t{oind.id, restype, {}});
 			}
+
+			auto globals_resolve_inductive = [
+				&inductive_globals,
+				&globals_resolve
+			](const std::string& id) -> std::optional<constr_t> {
+				auto i = inductive_globals.find(id);
+				return i == inductive_globals.end() ? globals_resolve(id) : i->second;
+			};
 
 			// Now, resolve all constructors.
 			for (std::size_t n = 0; n < ast_oinds.size(); ++n) {
@@ -1209,7 +1218,7 @@ parse_sfb(
 				auto& oind = oinds[n];
 				std::vector<formal_arg_t> formargs;
 				for (const auto& ast_formarg : ast_oind.args) {
-					auto formarg = ast_formarg.resolve({}, {}, globals_resolve, inductive_resolve);
+					auto formarg = ast_formarg.resolve({}, {}, globals_resolve_inductive, inductive_resolve);
 					if (!formarg) {
 						return formarg.error();
 					}
@@ -1218,7 +1227,7 @@ parse_sfb(
 					formargs.push_back(formarg.move_value());
 				}
 				for (const auto& cons : ast_oind.constructors) {
-					auto type = cons.type->resolve(ind_locals_map, ind_locals_types, globals_resolve, inductive_resolve);
+					auto type = cons.type->resolve(ind_locals_map, ind_locals_types, globals_resolve_inductive, inductive_resolve);
 					if (!type) {
 						return type.error();
 					}

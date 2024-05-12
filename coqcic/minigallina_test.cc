@@ -121,8 +121,8 @@ TEST(minigallina_test, sfb_parse) {
 				"nat",
 				builtin_set(),
 				{
-					{"O", local("nat", 0)},
-					{"S", product({{"x", local("nat", 0)}}, local("nat", 1))}
+					{"O", global("nat")},
+					{"S", product({{"x", global("nat")}}, global("nat"))}
 				}
 			}
 		}),
@@ -130,7 +130,9 @@ TEST(minigallina_test, sfb_parse) {
 			"Inductive nat : Set := \n"
 			"  | O : nat \n"
 			"  | S : forall (x : nat), nat\n"
-			".", globals_resolve, inductive_resolve).value());
+			".", globals_resolve, inductive_resolve
+		).value()
+	);
 
 	EXPECT_EQ(
 		fixpoint(
@@ -145,7 +147,9 @@ TEST(minigallina_test, sfb_parse) {
 				}
 			}),
 		coqcic::mgl::parse_sfb(
-			"Fixpoint dup (x : nat) : nat := S (dup x).", globals_resolve, inductive_resolve).value());
+			"Fixpoint dup (x : nat) : nat := S (dup x).", globals_resolve, inductive_resolve
+		).value()
+	);
 
 	EXPECT_EQ(
 		inductive({
@@ -153,8 +157,8 @@ TEST(minigallina_test, sfb_parse) {
 				"list",
 				builtin_set(),
 				{
-					{"cons", product({{"x", global("nat")}, {"l", local("list", 1)}}, local("list", 2))},
-					{"nil", local("list", 0)}
+					{"cons", product({{"x", global("nat")}, {"l", global("list")}}, global("list"))},
+					{"nil", global("list")}
 				}
 			}
 		}),
@@ -162,7 +166,9 @@ TEST(minigallina_test, sfb_parse) {
 			"Inductive list : Set := \n"
 			"  | cons : forall (x : nat), forall (l : list), list \n"
 			"  | nil : list\n"
-			".", globals_resolve, inductive_resolve).value());
+			".", globals_resolve, inductive_resolve
+		).value()
+	);
 
 	EXPECT_EQ(
 		inductive({
@@ -176,9 +182,9 @@ TEST(minigallina_test, sfb_parse) {
 							{
 								{"T", builtin_set()},
 								{"x", local("T", 0)},
-								{"l", apply(local("list", 2), {{local("T", 1)}})}
+								{"l", apply(global("list"), {{local("T", 1)}})}
 							},
-							apply(local("list", 3), {{local("T", 2)}})
+							apply(global("list"), {{local("T", 2)}})
 						)
 					},
 					{
@@ -187,7 +193,7 @@ TEST(minigallina_test, sfb_parse) {
 							{
 								{"T", builtin_set()},
 							},
-							apply(local("list", 1), {{local("T", 0)}})
+							apply(global("list"), {{local("T", 0)}})
 						)
 					}
 				}
