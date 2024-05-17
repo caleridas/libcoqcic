@@ -1,4 +1,4 @@
-DECLARE PLUGIN "export_sexpr_plugin"
+DECLARE PLUGIN "export_sexpr.export_sexpr"
 
 {
 
@@ -33,9 +33,9 @@ let build_rel_sexpr (env : env) (index : int) : string =
     ) in
     match Context.binder_name name with
       | Name id ->
-        build_sexpr "Local" [Id.to_string id ; string_of_int index]
+        build_sexpr "Local" [Id.to_string id ; string_of_int (index - 1)]
       | Anonymous ->
-        build_sexpr "Local" ["_" ; string_of_int index]
+        build_sexpr "Local" ["_" ; string_of_int (index - 1)]
   with Not_found ->
     build_sexpr "Rel" [string_of_int index]
 
@@ -67,7 +67,6 @@ let rec build_term_sexpr (env : env) (term : types) : string =
       let kind' = (match kind with
         | VMcast -> "VMcast"
         | DEFAULTcast -> "DEFAULTcast"
-        | REVERTcast -> "REVERTcast"
         | NATIVEcast -> "NATIVEcast") in
       let term' = build_term_sexpr env term in
       let type_term' = build_term_sexpr env type_term in
@@ -112,27 +111,28 @@ let rec build_term_sexpr (env : env) (term : types) : string =
       let name' = MutInd.make2 mp (Label.of_id name) in
       let kn = MutInd.canonical name' in
       build_sexpr "Global" [ KerName.to_string kn ]
-    | Case (case_info, case_term, match_type, branches) ->
+    | Case (case_info, u, params, match_return, iv, match_expr, branches) ->
+      let (case_info, match_return, iv, match_expr, branches) = Inductive.expand_case env (case_info, u, params, match_return, iv, match_expr, branches) in
       let (ind, i_index) = case_info.ci_ind in
       let mp = MutInd.modpath ind in
       let mib = lookup_mind ind env in
       let bodies = mib.mind_packets in
       let body = Array.get bodies i_index in
       let consnames = body.mind_consnames in
-      (* XXX: get per-constructer number of arguments from type signaruter? *)
+      (* XXX: get per-constructor number of arguments from type signature? *)
       let consnargs = body.mind_consnrealdecls in
 
       let cons_branches = List.combine (List.combine (Array.to_list consnames) (Array.to_list branches)) (Array.to_list consnargs) in
 
-      let case_term' = (build_term_sexpr env) case_term in
-      let match_type' = (build_term_sexpr env) match_type in
+      let match_return' = (build_term_sexpr env) match_return in
+      let match_expr' = (build_term_sexpr env) match_expr in
       let branches' = List.map
         (fun ((consname, branch), consnargs) ->
           let name = MutInd.make2 mp (Label.of_id consname) in
           let kn = KerName.to_string (MutInd.canonical (name)) in
           build_sexpr "Branch" [ kn ; string_of_int consnargs ; build_term_sexpr env branch ] ) cons_branches in
       let num_args = string_of_int case_info.ci_npar in
-      build_sexpr "Case" [ num_args ; case_term' ; build_sexpr "Match" [match_type'] ; build_sexpr "Branches" branches' ]
+      build_sexpr "Case" [ num_args ; match_return' ; build_sexpr "Match" [match_expr'] ; build_sexpr "Branches" branches' ]
     | Fix ((recurse_indices, index), (names, types, defs)) ->
       let env' = push_rel_context (bindings_for_fix names types) env in
       let fns = List.map
@@ -159,19 +159,21 @@ let rec build_term_sexpr (env : env) (term : types) : string =
       build_sexpr "Proj" [p' ; c']
     | Int i -> build_sexpr "Int" [ Uint63.to_string i ]
     | Float f -> build_sexpr "Float" [Float64.to_string f ]
+    | Array (u, vals, defs, t) -> "Unhandled:Array"
+
 
 let build_top_term_sexpr (term : types) : string =
   let env = Global.env() in
   build_term_sexpr env term
 
-let build_constant_sexpr (label : Label.t) (cb : Opaqueproof.opaque Declarations.constant_body) : string =
+let build_constant_sexpr (label : Label.t) (cb : Declarations.constant_body) : string =
   let name = Label.to_string label in
   let type_term = cb.const_type in
   match cb.const_body with
     | Undef _ ->
       build_sexpr "Axiom" [ name ; build_top_term_sexpr type_term ]
     | Def cs ->
-      let term = (Mod_subst.force_constr cs) in
+      let term = cs in
       build_sexpr "Definition" [ name ; build_top_term_sexpr type_term ; build_top_term_sexpr term  ]
     | OpaqueDef o ->
       build_sexpr "Theorem" [ name ; build_top_term_sexpr type_term ]
@@ -239,7 +241,7 @@ and build_modsig_sexpr (ms : Declarations.module_signature) : string =
     | Declarations.MoreFunctor (mbid, mtb, ms) ->
       build_sexpr "Functor" [ Names.MBId.to_string mbid ; build_modname mtb ; build_modsig_sexpr ms ]
 
-and build_modalgexpr_sexpr (ma : Declarations.module_alg_expr) : string =
+and build_modalgexpr_sexpr (ma : 'uconstr Declarations.module_alg_expr) : string =
   match ma with
     | MEident mp -> ModPath.to_string mp
     | MEapply (ma, mp) -> build_sexpr "Apply" [ build_modalgexpr_sexpr ma ; ModPath.to_string mp ]
