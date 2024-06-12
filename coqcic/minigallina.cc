@@ -36,6 +36,8 @@ static keyword_entry_t keyword_mapping[] = {
 	{keyword_definition, "Definition"},
 	{keyword_fixpoint, "Fixpoint"},
 	{keyword_inductive, "Inductive"},
+	{keyword_module, "Module"},
+	{keyword_End, "End"},
 	{keyword_end, "end"},
 	{keyword_match, "match"},
 	{keyword_with, "with"},
@@ -43,7 +45,8 @@ static keyword_entry_t keyword_mapping[] = {
 	{keyword_let, "let"},
 	{keyword_in, "in"},
 	{keyword_as, "as"},
-	{keyword_return, "return"}
+	{keyword_return, "return"},
+	{keyword_fun, "fun"}
 };
 
 std::string
@@ -303,6 +306,39 @@ constr_ast_node_product::resolve(
 	}
 
 	return builder::product(std::move(args), restype.move_value());
+}
+
+constr_ast_node_lambda::~constr_ast_node_lambda() {
+}
+
+parse_result<constr_t, parse_error>
+constr_ast_node_lambda::resolve(
+	const lazy_stackmap<std::string>& locals_map,
+	const lazy_stack<type_context_t::local_entry>& locals_types,
+	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
+) const {
+	auto new_locals_map = locals_map;
+	auto new_locals_types = locals_types;
+
+	std::vector<formal_arg_t> args;
+
+	for (const auto& arg : args_) {
+		auto type = arg.type->resolve(new_locals_map, new_locals_types, globals_resolve, inductive_resolve);
+		if (!type) {
+			return type.error();
+		}
+		new_locals_types = locals_types.push({arg.id, type.value()});
+		new_locals_map = new_locals_map.push(arg.id);
+		args.push_back(formal_arg_t { arg.id, type.value() });
+	}
+
+	auto body = body_->resolve(new_locals_map, new_locals_types, globals_resolve, inductive_resolve);
+	if (!body) {
+		return body.error();
+	}
+
+	return builder::lambda(std::move(args), body.move_value());
 }
 
 constr_ast_node_match::~constr_ast_node_match() {
@@ -879,6 +915,24 @@ parse_constr_ast_inner(
 
 						return constr_ast_node_product::create(loc, args.move_value(), restype.move_value());
 					}
+					case keyword_fun: {
+						auto args = parse_constr_ast_formargs(tokenizer);
+						if (!args) {
+							return args.error();
+						}
+
+						auto mapsto = parse_expect_symbol(tokenizer, symbol_mapsto);
+						if (!mapsto) {
+							return mapsto.error();
+						}
+
+						auto body = parse_constr_ast(tokenizer);
+						if (!body) {
+							return body.error();
+						}
+
+						return constr_ast_node_lambda::create(loc, args.move_value(), body.move_value());
+					}
 					default: {
 						return parse_error { "unexpected keyword " + keyword_name(arg.keyword), arg.location };
 					}
@@ -1115,11 +1169,423 @@ parse_sfb_one_inductive(
 	return sfb_ast_one_inductive { id.move_value(), formargs.move_value(), type.move_value(), std::move(constructors) };
 }
 
+namespace {
+
+std::string
+make_mod_id(const std::string& mod_context, const std::string& id) {
+	return mod_context.empty() ? id : mod_context + "." + id;
+}
+
+parse_result<sfb_t, parse_error>
+parse_sfb_definition(
+	token_parser& tokenizer,
+	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve,
+	parse_symtab_t& symtab,
+	const std::string mod_context
+) {
+	auto combined_globals_resolve = [&globals_resolve, &symtab](const std::string& id) -> std::optional<constr_t> {
+		auto i = symtab.id_to_type.find(id);
+		return i != symtab.id_to_type.end() ? i->second : globals_resolve(id);
+	};
+	auto combined_inductive_resolve = [&inductive_resolve, &symtab](const constr_t& constr) -> std::optional<one_inductive_t> {
+		constr_t inner = constr;
+		while (auto a = inner.as_apply()) {
+			inner = a->fn();
+		}
+
+		if (auto g = inner.as_global()) {
+			auto i = symtab.id_to_inductive.find(g->name());
+			if (i != symtab.id_to_inductive.end()) {
+				return i->second;
+			}
+		}
+		return inductive_resolve(constr);
+	};
+
+	auto id = parse_id(tokenizer);
+	if (!id) {
+		return id.error();
+	}
+
+	auto colon = parse_expect_symbol(tokenizer, symbol_colon);
+	if (!colon) {
+		return colon.error();
+	}
+
+	auto type = parse_constr(tokenizer, {}, {}, combined_globals_resolve, combined_inductive_resolve);
+	if (!type) {
+		return type.error();
+	}
+
+	auto assign = parse_expect_symbol(tokenizer, symbol_assign);
+	if (!assign) {
+		return assign.error();
+	}
+
+	auto expr = parse_constr(tokenizer, {}, {}, combined_globals_resolve, combined_inductive_resolve);
+	if (!expr) {
+		return expr.error();
+	}
+
+	symtab.id_to_type[make_mod_id(mod_context, id.value())] = type.value();
+
+	return builder::definition(id.move_value(), type.move_value(), expr.move_value());
+}
+
+parse_result<sfb_t, parse_error>
+parse_sfb_inductive(
+	token_parser& tokenizer,
+	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve,
+	parse_symtab_t& symtab,
+	const std::string mod_context
+) {
+	auto combined_globals_resolve = [&globals_resolve, &symtab](const std::string& id) -> std::optional<constr_t> {
+		auto i = symtab.id_to_type.find(id);
+		return i != symtab.id_to_type.end() ? i->second : globals_resolve(id);
+	};
+	auto combined_inductive_resolve = [&inductive_resolve, &symtab](const constr_t& constr) -> std::optional<one_inductive_t> {
+		constr_t inner = constr;
+		while (auto a = inner.as_apply()) {
+			inner = a->fn();
+		}
+
+		if (auto g = inner.as_global()) {
+			auto i = symtab.id_to_inductive.find(g->name());
+			if (i != symtab.id_to_inductive.end()) {
+				return i->second;
+			}
+		}
+		return inductive_resolve(constr);
+	};
+
+	std::vector<sfb_ast_one_inductive> ast_oinds;
+
+	for (;;) {
+		auto oind = parse_sfb_one_inductive(tokenizer);
+		if (!oind) {
+			return oind.error();
+		}
+		ast_oinds.push_back(oind.move_value());
+		auto tok = tokenizer.peek();
+		if (!tok || !token_is_keyword(*tok, keyword_with)) {
+			break;
+		}
+		tokenizer.get();
+	}
+
+	lazy_stackmap<std::string> locals_map;
+	lazy_stack<type_context_t::local_entry> locals_types;
+
+	std::vector<one_inductive_t> oinds;
+
+	// Push the ids of the inductives as globals for resolving
+	// their type.
+	std::unordered_map<std::string, constr_t> inductive_globals;
+	for (const auto& oind : ast_oinds) {
+		std::vector<formal_arg_t> formargs;
+		for (const auto& ast_formarg : oind.args) {
+			auto formarg = ast_formarg.resolve({}, {}, combined_globals_resolve, combined_inductive_resolve);
+			if (!formarg) {
+				return formarg.error();
+			}
+			formargs.push_back(formarg.move_value());
+		}
+
+		auto type = oind.type->resolve({}, {}, combined_globals_resolve, combined_inductive_resolve);
+		if (!type) {
+			return type.error();
+		}
+
+		auto restype = formargs.empty() ? type.move_value() : normalize(builder::product(formargs, type.move_value()));
+		inductive_globals[oind.id] = restype;
+
+		oinds.push_back(one_inductive_t{oind.id, restype, {}});
+	}
+
+	auto globals_resolve_inductive = [
+		&inductive_globals,
+		&combined_globals_resolve
+	](const std::string& id) -> std::optional<constr_t> {
+		auto i = inductive_globals.find(id);
+		return i == inductive_globals.end() ? combined_globals_resolve(id) : i->second;
+	};
+
+	// Now, resolve all constructors.
+	for (std::size_t n = 0; n < ast_oinds.size(); ++n) {
+		// The arguments of the inductive type itself need to be added
+		// as additional arguments to each constructor.
+		auto ind_locals_types = locals_types;
+		auto ind_locals_map = locals_map;
+		auto& ast_oind = ast_oinds[n];
+		auto& oind = oinds[n];
+		std::vector<formal_arg_t> formargs;
+		for (const auto& ast_formarg : ast_oind.args) {
+			auto formarg = ast_formarg.resolve({}, {}, globals_resolve_inductive, combined_inductive_resolve);
+			if (!formarg) {
+				return formarg.error();
+			}
+			ind_locals_types = ind_locals_types.push({formarg.value().name.value_or("_"), formarg.value().type});
+			ind_locals_map = ind_locals_map.push(formarg.value().name.value_or("_"));
+			formargs.push_back(formarg.move_value());
+		}
+		for (const auto& cons : ast_oind.constructors) {
+			auto type = cons.type->resolve(ind_locals_map, ind_locals_types, globals_resolve_inductive, combined_inductive_resolve);
+			if (!type) {
+				return type.error();
+			}
+			auto constype = formargs.empty() ? normalize(type.move_value()) : normalize(builder::product(formargs, type.move_value()));
+			oind.constructors.push_back(constructor_t {cons.id, std::move(constype)} );
+		}
+	}
+
+	for (const auto& oind : oinds) {
+		symtab.id_to_type[make_mod_id(mod_context, oind.id)] = oind.type;
+		symtab.id_to_inductive.emplace(make_mod_id(mod_context, oind.id), oind);
+
+		for (const auto& cons : oind.constructors) {
+			symtab.id_to_type[make_mod_id(mod_context, cons.id)] = cons.type;
+		}
+	}
+
+	return builder::inductive(std::move(oinds));
+}
+
+parse_result<sfb_t, parse_error>
+parse_sfb_fixpoint(
+	token_parser& tokenizer,
+	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve,
+	parse_symtab_t& symtab,
+	const std::string mod_context
+) {
+	auto combined_globals_resolve = [&globals_resolve, &symtab](const std::string& id) -> std::optional<constr_t> {
+		auto i = symtab.id_to_type.find(id);
+		return i != symtab.id_to_type.end() ? i->second : globals_resolve(id);
+	};
+	auto combined_inductive_resolve = [&inductive_resolve, &symtab](const constr_t& constr) -> std::optional<one_inductive_t> {
+		constr_t inner = constr;
+		while (auto a = inner.as_apply()) {
+			inner = a->fn();
+		}
+
+		if (auto g = inner.as_global()) {
+			auto i = symtab.id_to_inductive.find(g->name());
+			if (i != symtab.id_to_inductive.end()) {
+				return i->second;
+			}
+		}
+		return inductive_resolve(constr);
+	};
+
+	struct sfb_ast_fix_function_t {
+		std::string name;
+		std::vector<constr_ast_formarg> args;
+		std::shared_ptr<const constr_ast_node> restype;
+		std::shared_ptr<const constr_ast_node> body;
+	};
+
+	std::vector<sfb_ast_fix_function_t> ast_group;
+
+	for (;;) {
+		auto id = parse_id(tokenizer);
+		if (!id) {
+			return id.error();
+		}
+
+		auto args = parse_constr_ast_formargs(tokenizer);
+		if (!args) {
+			return args.error();
+		}
+
+		auto colon = parse_expect_symbol(tokenizer, symbol_colon);
+		if (!colon) {
+			return colon.error();
+		}
+
+		auto restype = parse_constr_ast(tokenizer);
+		if (!restype) {
+			return restype.error();
+		}
+
+		auto assign = parse_expect_symbol(tokenizer, symbol_assign);
+		if (!assign) {
+			return assign.error();
+		}
+		auto body = parse_constr_ast(tokenizer);
+		if (!body) {
+			return body.error();
+		}
+
+		ast_group.push_back(
+			sfb_ast_fix_function_t {id.move_value(), args.move_value(), restype.move_value(), body.move_value()}
+		);
+
+		auto tok = tokenizer.peek();
+		if (!tok || !token_is_keyword(*tok, keyword_with)) {
+			break;
+		}
+		tokenizer.get();
+	}
+
+	struct fn_sig_t {
+		std::string name;
+		std::vector<formal_arg_t> args;
+		constr_t restype;
+		std::shared_ptr<const constr_ast_node> body;
+	};
+	std::vector<fn_sig_t> sigs;
+
+	// First step: resolve the function types.
+	for (const auto& fn : ast_group) {
+		std::vector<formal_arg_t> args;
+		lazy_stackmap<std::string> locals_map;
+		lazy_stack<type_context_t::local_entry> locals_types;
+
+		for (const auto& arg : fn.args) {
+			auto type = arg.type->resolve(locals_map, locals_types, combined_globals_resolve, combined_inductive_resolve);
+			if (!type) {
+				return type.error();
+			}
+			locals_types = locals_types.push({arg.id, type.value()});
+			locals_map = locals_map.push(arg.id);
+			args.push_back(formal_arg_t { arg.id, type.value() });
+		}
+
+		auto restype = fn.restype->resolve(locals_map, locals_types, combined_globals_resolve, combined_inductive_resolve);
+		if (!restype) {
+			return restype.error();
+		}
+
+		sigs.push_back(
+			fn_sig_t {
+				fn.name,
+				std::move(args),
+				restype.move_value(),
+				std::move(fn.body)
+			});
+	}
+
+	lazy_stackmap<std::string> locals_map;
+	lazy_stack<type_context_t::local_entry> locals_types;
+	// Push function names and signatures as local context variables.
+	for (const auto& sig : sigs) {
+		auto type = builder::product(sig.args, sig.restype);
+		locals_types = locals_types.push({sig.name, type});
+		locals_map = locals_map.push(sig.name);
+	}
+
+	fix_group_t group;
+	// Now resolve function bodies and build fix group.
+	for (const auto& sig : sigs) {
+		auto inner_locals_types = locals_types;
+		auto inner_locals_map = locals_map;
+		for (const auto& arg : sig.args) {
+			inner_locals_types = inner_locals_types.push({arg.name ? *arg.name : "_", arg.type});
+			inner_locals_map = inner_locals_map.push(arg.name ? *arg.name : "_");
+		}
+
+		auto body = sig.body->resolve(inner_locals_map, inner_locals_types, combined_globals_resolve, combined_inductive_resolve);
+		if (!body) {
+			return body.error();
+		}
+
+		group.functions.push_back(
+			fix_function_t {
+				std::move(sig.name),
+				std::move(sig.args),
+				std::move(sig.restype),
+				body.move_value()
+			});
+	}
+
+	for (const auto& fn : group.functions) {
+		symtab.id_to_type[make_mod_id(mod_context, fn.name)] = builder::product(fn.args, fn.restype);
+	}
+
+	return builder::fixpoint(std::move(group));
+}
+
+parse_result<sfb_t, parse_error>
+parse_sfb_module(
+	token_parser& tokenizer,
+	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve,
+	parse_symtab_t& symtab,
+	const std::string mod_context
+) {
+	// Currently, only non-algebraic unparameterized modules are supported.
+	auto id = parse_id(tokenizer);
+	if (!id) {
+		return id.error();
+	}
+
+	auto dot = parse_expect_symbol(tokenizer, symbol_dot);
+	if (!dot) {
+		return dot.error();
+	}
+
+	std::string sub_mod_context =
+		mod_context.empty() ? id.value() : mod_context + "." + id.value();
+
+	std::vector<sfb_t> sfbs;
+	for (;;) {
+		auto tok = tokenizer.peek();
+		if (!tok || token_is_keyword(*tok, keyword_End)) {
+			break;
+		}
+
+		auto sfb = parse_sfb(
+			tokenizer,
+			globals_resolve,
+			inductive_resolve,
+			symtab,
+			sub_mod_context
+		);
+		if (!sfb) {
+			return sfb.error();
+		}
+
+		sfbs.push_back(sfb.move_value());
+
+		auto dot = parse_expect_symbol(tokenizer, symbol_dot);
+		if (!dot) {
+			return dot.error();
+		}
+	}
+
+	auto end = parse_expect_keyword(tokenizer, keyword_End);
+	if (!end) {
+		return end.error();
+	}
+
+	auto end_id = parse_id(tokenizer);
+	if (!end_id) {
+		return end_id.error();
+	}
+
+	return builder::module_def(
+		id.move_value(),
+		module_body(
+			/* parameters */ {},
+			std::make_shared<module_body_struct_repr>(
+				/* type */ std::nullopt,
+				/* sfbs */ std::move(sfbs)
+			)
+		)
+	);
+}
+
+}  // namespace
+
 parse_result<sfb_t, parse_error>
 parse_sfb(
 	token_parser& tokenizer,
 	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
-	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve,
+	parse_symtab_t& symtab,
+	const std::string mod_context
 ) {
 	auto kw = parse_keyword(tokenizer);
 	if (!kw) {
@@ -1128,242 +1594,19 @@ parse_sfb(
 
 	switch (kw.value()) {
 		case keyword_definition: {
-			auto id = parse_id(tokenizer);
-			if (!id) {
-				return id.error();
-			}
-
-			auto colon = parse_expect_symbol(tokenizer, symbol_colon);
-			if (!colon) {
-				return colon.error();
-			}
-
-			auto type = parse_constr(tokenizer, {}, {}, globals_resolve, inductive_resolve);
-			if (!type) {
-				return type.error();
-			}
-
-			auto assign = parse_expect_symbol(tokenizer, symbol_assign);
-			if (!assign) {
-				return assign.error();
-			}
-
-			auto expr = parse_constr(tokenizer, {}, {}, globals_resolve, inductive_resolve);
-			if (!expr) {
-				return type.error();
-			}
-
-			return builder::definition(id.move_value(), type.move_value(), expr.move_value());
+			return parse_sfb_definition(tokenizer, globals_resolve, inductive_resolve, symtab, mod_context);
 		}
 		case keyword_inductive: {
-			std::vector<sfb_ast_one_inductive> ast_oinds;
-
-			for (;;) {
-				auto oind = parse_sfb_one_inductive(tokenizer);
-				if (!oind) {
-					return oind.error();
-				}
-				ast_oinds.push_back(oind.move_value());
-				auto tok = tokenizer.peek();
-				if (!tok || !token_is_keyword(*tok, keyword_with)) {
-					break;
-				}
-				tokenizer.get();
-			}
-
-			lazy_stackmap<std::string> locals_map;
-			lazy_stack<type_context_t::local_entry> locals_types;
-
-			std::vector<one_inductive_t> oinds;
-
-			// Push the ids of the inductives as globals for resolving
-			// their type.
-			std::unordered_map<std::string, constr_t> inductive_globals;
-			for (const auto& oind : ast_oinds) {
-				std::vector<formal_arg_t> formargs;
-				for (const auto& ast_formarg : oind.args) {
-					auto formarg = ast_formarg.resolve({}, {}, globals_resolve, inductive_resolve);
-					if (!formarg) {
-						return formarg.error();
-					}
-					formargs.push_back(formarg.move_value());
-				}
-
-				auto type = oind.type->resolve({}, {}, globals_resolve, inductive_resolve);
-				if (!type) {
-					return type.error();
-				}
-
-				auto restype = formargs.empty() ? type.move_value() : normalize(builder::product(formargs, type.move_value()));
-				inductive_globals[oind.id] = restype;
-
-				oinds.push_back(one_inductive_t{oind.id, restype, {}});
-			}
-
-			auto globals_resolve_inductive = [
-				&inductive_globals,
-				&globals_resolve
-			](const std::string& id) -> std::optional<constr_t> {
-				auto i = inductive_globals.find(id);
-				return i == inductive_globals.end() ? globals_resolve(id) : i->second;
-			};
-
-			// Now, resolve all constructors.
-			for (std::size_t n = 0; n < ast_oinds.size(); ++n) {
-				// The arguments of the inductive type itself need to be added
-				// as additional arguments to each constructor.
-				auto ind_locals_types = locals_types;
-				auto ind_locals_map = locals_map;
-				auto& ast_oind = ast_oinds[n];
-				auto& oind = oinds[n];
-				std::vector<formal_arg_t> formargs;
-				for (const auto& ast_formarg : ast_oind.args) {
-					auto formarg = ast_formarg.resolve({}, {}, globals_resolve_inductive, inductive_resolve);
-					if (!formarg) {
-						return formarg.error();
-					}
-					ind_locals_types = ind_locals_types.push({formarg.value().name.value_or("_"), formarg.value().type});
-					ind_locals_map = ind_locals_map.push(formarg.value().name.value_or("_"));
-					formargs.push_back(formarg.move_value());
-				}
-				for (const auto& cons : ast_oind.constructors) {
-					auto type = cons.type->resolve(ind_locals_map, ind_locals_types, globals_resolve_inductive, inductive_resolve);
-					if (!type) {
-						return type.error();
-					}
-					auto constype = formargs.empty() ? normalize(type.move_value()) : normalize(builder::product(formargs, type.move_value()));
-					oind.constructors.push_back(constructor_t {cons.id, std::move(constype)} );
-				}
-			}
-
-			return builder::inductive(std::move(oinds));
+			return parse_sfb_inductive(tokenizer, globals_resolve, inductive_resolve, symtab, mod_context);
 		}
 		case keyword_fixpoint: {
-			struct sfb_ast_fix_function_t {
-				std::string name;
-				std::vector<constr_ast_formarg> args;
-				std::shared_ptr<const constr_ast_node> restype;
-				std::shared_ptr<const constr_ast_node> body;
-			};
-
-			std::vector<sfb_ast_fix_function_t> ast_group;
-
-			for (;;) {
-				auto id = parse_id(tokenizer);
-				if (!id) {
-					return id.error();
-				}
-
-				auto args = parse_constr_ast_formargs(tokenizer);
-				if (!args) {
-					return args.error();
-				}
-
-				auto colon = parse_expect_symbol(tokenizer, symbol_colon);
-				if (!colon) {
-					return colon.error();
-				}
-
-				auto restype = parse_constr_ast(tokenizer);
-				if (!restype) {
-					return restype.error();
-				}
-
-				auto assign = parse_expect_symbol(tokenizer, symbol_assign);
-				if (!assign) {
-					return assign.error();
-				}
-				auto body = parse_constr_ast(tokenizer);
-				if (!body) {
-					return body.error();
-				}
-
-				ast_group.push_back(
-					sfb_ast_fix_function_t {id.move_value(), args.move_value(), restype.move_value(), body.move_value()}
-				);
-
-				auto tok = tokenizer.peek();
-				if (!tok || !token_is_keyword(*tok, keyword_with)) {
-					break;
-				}
-				tokenizer.get();
-			}
-
-			struct fn_sig_t {
-				std::string name;
-				std::vector<formal_arg_t> args;
-				constr_t restype;
-				std::shared_ptr<const constr_ast_node> body;
-			};
-			std::vector<fn_sig_t> sigs;
-
-			// First step: resolve the function types.
-			for (const auto& fn : ast_group) {
-				std::vector<formal_arg_t> args;
-				lazy_stackmap<std::string> locals_map;
-				lazy_stack<type_context_t::local_entry> locals_types;
-
-				for (const auto& arg : fn.args) {
-					auto type = arg.type->resolve(locals_map, locals_types, globals_resolve, inductive_resolve);
-					if (!type) {
-						return type.error();
-					}
-					locals_types = locals_types.push({arg.id, type.value()});
-					locals_map = locals_map.push(arg.id);
-					args.push_back(formal_arg_t { arg.id, type.value() });
-				}
-
-				auto restype = fn.restype->resolve(locals_map, locals_types, globals_resolve, inductive_resolve);
-				if (!restype) {
-					return restype.error();
-				}
-
-				sigs.push_back(
-					fn_sig_t {
-						fn.name,
-						std::move(args),
-						restype.move_value(),
-						std::move(fn.body)
-					});
-			}
-
-			lazy_stackmap<std::string> locals_map;
-			lazy_stack<type_context_t::local_entry> locals_types;
-			// Push function names and signatures as local context variables.
-			for (const auto& sig : sigs) {
-				auto type = builder::product(sig.args, sig.restype);
-				locals_types = locals_types.push({sig.name, type});
-				locals_map = locals_map.push(sig.name);
-			}
-
-			fix_group_t group;
-			// Now resolve function bodies and build fix group.
-			for (const auto& sig : sigs) {
-				auto inner_locals_types = locals_types;
-				auto inner_locals_map = locals_map;
-				for (const auto& arg : sig.args) {
-					inner_locals_types = inner_locals_types.push({arg.name ? *arg.name : "_", arg.type});
-					inner_locals_map = inner_locals_map.push(arg.name ? *arg.name : "_");
-				}
-
-				auto body = sig.body->resolve(inner_locals_map, inner_locals_types, globals_resolve, inductive_resolve);
-				if (!body) {
-					return body.error();
-				}
-
-				group.functions.push_back(
-					fix_function_t {
-						std::move(sig.name),
-						std::move(sig.args),
-						std::move(sig.restype),
-						body.move_value()
-					});
-			}
-
-			return builder::fixpoint(std::move(group));
+			return parse_sfb_fixpoint(tokenizer, globals_resolve, inductive_resolve, symtab, mod_context);
+		}
+		case keyword_module: {
+			return parse_sfb_module(tokenizer, globals_resolve, inductive_resolve, symtab, mod_context);
 		}
 		default: {
-			return parse_error { "Expected 'Definition' or 'Fixpoint' or 'Inductive'", tokenizer.location() };
+			return parse_error { "Expected 'Definition' or 'Fixpoint' or 'Inductive' or 'Module'", tokenizer.location() };
 		}
 	}
 }
@@ -1372,11 +1615,23 @@ parse_result<sfb_t, parse_error>
 parse_sfb(
 	const std::string& s,
 	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
-	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve,
+	parse_symtab_t& symtab,
+	const std::string mod_context
 ) {
 	std::stringstream ss(s);
 	token_parser tokenizer(ss);
-	return parse_sfb(tokenizer, globals_resolve, inductive_resolve);
+	return parse_sfb(tokenizer, globals_resolve, inductive_resolve, symtab, mod_context);
+}
+
+parse_result<sfb_t, parse_error>
+parse_sfb(
+	const std::string& s,
+	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
+) {
+	parse_symtab_t symtab;
+	return parse_sfb(s, globals_resolve, inductive_resolve, symtab, "");
 }
 
 }  // namespace mgl

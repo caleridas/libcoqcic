@@ -207,3 +207,97 @@ TEST(minigallina_test, sfb_parse) {
 		).value()
 	);
 }
+
+TEST(minigallina_test, simple_module) {
+	using namespace coqcic::builder;
+
+	auto globals_resolve = [](const std::string& s) -> std::optional<coqcic::constr_t> {
+		if (s == "Coq.Init.Datatypes.nat") {
+			return builtin_set();
+		} else if (s == "Coq.Init.Datatypes.O") {
+			return global("Coq.Init.Datatypes.nat");
+		} else if (s == "Coq.Init.Datatypes.S") {
+			return product({{{}, global("Coq.Init.Datatypes.nat")}}, global("Coq.Init.Datatypes.nat"));
+		} else {
+			return std::nullopt;
+		}
+	};
+
+	auto inductive_resolve = [](const coqcic::constr_t& ind) -> std::optional<coqcic::one_inductive_t> {
+		if (auto glob = ind.as_global()) {
+			if (glob->name() == "Coq.Init.Datatypes.nat") {
+				return coqcic::one_inductive_t {
+					"Coq.Init.Datatypes.nat",
+					builtin_set(),
+					{
+						{"O", global("Coq.Init.Datatypes.nat")},
+						{"S", product({{{}, global("Coq.Init.Datatypes.nat")}}, global("Coq.Init.Datatypes.nat"))}
+					}
+				};
+			}
+		}
+		return std::nullopt;
+	};
+
+	auto mod = coqcic::mgl::parse_sfb(
+		"Module root.\n"
+		"Fixpoint plus (x : Coq.Init.Datatypes.nat) (y : Coq.Init.Datatypes.nat) : Coq.Init.Datatypes.nat :=\n"
+		"  match x as _ return Coq.Init.Datatypes.nat with\n"
+		"    | O => y \n"
+		"    | S xx => Coq.Init.Datatypes.S (plus xx y) \n"
+		"  end.\n"
+		"End root.\n",
+		globals_resolve,
+		inductive_resolve
+	).value();
+}
+
+TEST(minigallina_test, compound_module) {
+	using namespace coqcic::builder;
+
+	auto globals_resolve = [](const std::string& s) -> std::optional<coqcic::constr_t> {
+		if (s == "Coq.Init.Datatypes.nat") {
+			return builtin_set();
+		} else if (s == "Coq.Init.Datatypes.O") {
+			return global("Coq.Init.Datatypes.nat");
+		} else if (s == "Coq.Init.Datatypes.S") {
+			return product({{{}, global("Coq.Init.Datatypes.nat")}}, global("Coq.Init.Datatypes.nat"));
+		} else {
+			return std::nullopt;
+		}
+	};
+
+	auto inductive_resolve = [](const coqcic::constr_t& ind) -> std::optional<coqcic::one_inductive_t> {
+		if (auto glob = ind.as_global()) {
+			if (glob->name() == "Coq.Init.Datatypes.nat") {
+				return coqcic::one_inductive_t {
+					"Coq.Init.Datatypes.nat",
+					builtin_set(),
+					{
+						{"O", global("Coq.Init.Datatypes.nat")},
+						{"S", product({{{}, global("Coq.Init.Datatypes.nat")}}, global("Coq.Init.Datatypes.nat"))}
+					}
+				};
+			}
+		}
+		return std::nullopt;
+	};
+
+	auto parsed = coqcic::mgl::parse_sfb(
+		"Module root.\n"
+		"  Inductive pair (X : Set) (Y : Set) : Set :=\n"
+		"    | make_pair : forall (x : X), forall (y : Y), pair\n"
+		"  .\n"
+		"  Definition swap_pair : forall (X : Set) (Y : Set) (p : root.pair X Y), root.pair Y X :=\n"
+		"    fun (X : Set) (Y : Set) (p : root.pair X Y) => match p as _ return root.pair Y X with\n"
+		"      | make_pair _ _ x y => root.pair Y X y x\n"
+		"    end\n"
+		"  .\n"
+		"End root.\n",
+		globals_resolve,
+		inductive_resolve
+	).value();
+
+	auto mod = parsed.as_module();
+	EXPECT_TRUE(mod);
+}

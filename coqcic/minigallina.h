@@ -17,6 +17,8 @@ enum keyword_t {
 	keyword_definition,
 	keyword_fixpoint,
 	keyword_inductive,
+	keyword_module,
+	keyword_End,
 	keyword_end,
 	keyword_match,
 	keyword_with,
@@ -24,7 +26,8 @@ enum keyword_t {
 	keyword_let,
 	keyword_in,
 	keyword_as,
-	keyword_return
+	keyword_return,
+	keyword_fun
 };
 
 enum symbol_t {
@@ -101,6 +104,11 @@ struct parse_error {
 	std::string description;
 	// character index into source
 	std::size_t location;
+};
+
+struct parse_symtab_t {
+	std::unordered_map<std::string, constr_t> id_to_type;
+	std::unordered_map<std::string, one_inductive_t> id_to_inductive;
 };
 
 class constr_ast_node {
@@ -322,6 +330,48 @@ private:
 	std::shared_ptr<const constr_ast_node> restype_;
 };
 
+class constr_ast_node_lambda final : public constr_ast_node {
+private:
+	struct private_tag {};
+
+public:
+	~constr_ast_node_lambda() override;
+
+	parse_result<constr_t, parse_error>
+	resolve(
+		const lazy_stackmap<std::string>& locals_map,
+		const lazy_stack<type_context_t::local_entry>& locals_types,
+		const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+		const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
+	) const override;
+
+	inline const std::vector<constr_ast_formarg>& args() const noexcept { return args_; }
+	inline const std::shared_ptr<const constr_ast_node>& body() const noexcept { return body_; }
+
+	inline static
+	std::shared_ptr<const constr_ast_node>
+	create(
+		std::size_t location,
+		std::vector<constr_ast_formarg> args,
+		std::shared_ptr<const constr_ast_node> body
+	) {
+		return std::make_shared<constr_ast_node_lambda>(location, std::move(args), std::move(body), private_tag{});
+	}
+
+	inline
+	constr_ast_node_lambda(
+		std::size_t location,
+		std::vector<constr_ast_formarg> args,
+		std::shared_ptr<const constr_ast_node> body,
+		private_tag
+	) : constr_ast_node(location), args_(std::move(args)), body_(std::move(body)) {
+	}
+
+private:
+	std::vector<constr_ast_formarg> args_;
+	std::shared_ptr<const constr_ast_node> body_;
+};
+
 class constr_ast_node_match final : public constr_ast_node {
 private:
 	struct private_tag {};
@@ -411,7 +461,18 @@ parse_result<sfb_t, parse_error>
 parse_sfb(
 	token_parser& tokenizer,
 	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
-	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve,
+	parse_symtab_t& symtab,
+	const std::string mod_context
+);
+
+parse_result<sfb_t, parse_error>
+parse_sfb(
+	const std::string& s,
+	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve,
+	parse_symtab_t& symtab,
+	const std::string mod_context
 );
 
 parse_result<sfb_t, parse_error>
@@ -420,6 +481,7 @@ parse_sfb(
 	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
 	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
 );
+
 
 }  // namespace mgl
 }  // namespace coqcic
