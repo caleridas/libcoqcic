@@ -65,7 +65,7 @@ TEST(minigallina_test, constr_parse) {
 		"end", globals_resolve, inductive_resolve).value();
 	EXPECT_EQ(
 		match(
-			product({{"_", global("nat")}}, global("nat")),
+			lambda({{"_", global("nat")}}, global("nat")),
 			global("O"),
 			{
 				{"O", 0, apply(global("S"), {global("O")})},

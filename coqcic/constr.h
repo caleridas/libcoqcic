@@ -521,9 +521,8 @@ public:
 	shift(std::size_t limit, int dir) const override;
 
 	// The type of the case expression abstracted over its argument -- i.e.
-	// this is a product type taking the match expression as the first argument
-	// and producing the result type of the match expression (applied to the
-	// match argument).
+	// this is a lambda type taking the match expression as the first argument
+	// and producing the result type of the match expression.
 	inline
 	const constr_t&
 	casetype() const noexcept { return casetype_; }

@@ -371,7 +371,7 @@ constr_ast_node_match::resolve(
 	if (!restype) {
 		return restype.error();
 	}
-	auto casetype = builder::product({{id, arg_type}}, restype.move_value());
+	auto casetype = builder::lambda({{id, arg_type}}, restype.move_value());
 
 	std::vector<match_branch_t> branches;
 	for (const auto& branch : branches_) {
