@@ -398,11 +398,14 @@ constr_ast_node_match::resolve(
 			return branch_body.error();
 		}
 
+		// If this is a parameterized inductive, then the parametrisation of
+		// the constructor should be omitted during.
+		std::size_t arg_count = formal_args.size();
 		auto branch_expr = formal_args.size() ?
 			builder::lambda(std::move(formal_args), branch_body.move_value()) :
 			branch_body.move_value();
 
-		branches.push_back(match_branch_t { branch.constructor, formal_args.size(), std::move(branch_expr) });
+		branches.push_back(match_branch_t { branch.constructor, arg_count, std::move(branch_expr) });
 	}
 
 	return builder::match(std::move(casetype), arg.move_value(), std::move(branches));

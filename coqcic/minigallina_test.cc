@@ -69,7 +69,7 @@ TEST(minigallina_test, constr_parse) {
 			global("O"),
 			{
 				{"O", 0, apply(global("S"), {global("O")})},
-				{"S", 0, lambda({{"x", global("nat")}}, apply(global("S"),{apply(global("S"), {local("x", 0)})}))}
+				{"S", 1, lambda({{"x", global("nat")}}, apply(global("S"),{apply(global("S"), {local("x", 0)})}))}
 			}),
 		c);
 
