@@ -93,6 +93,9 @@ struct constructor_t {
 	}
 };
 
+/**
+	\brief Single inductive definition
+*/
 struct one_inductive_t {
 	std::string id;
 	constr_t type;

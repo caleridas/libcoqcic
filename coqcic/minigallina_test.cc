@@ -78,6 +78,67 @@ TEST(minigallina_test, constr_parse) {
 		coqcic::mgl::parse_constr("forall (x : nat), nat", globals_resolve, inductive_resolve).value());
 }
 
+TEST(minigallina_test, constr_fix_parse) {
+	using namespace coqcic::builder;
+
+	auto globals_resolve = [](const std::string& s) -> std::optional<coqcic::constr_t> {
+		if (s == "Coq.Init.Datatypes.nat") {
+			return builtin_set();
+		} else if (s == "nat") {
+			return builtin_set();
+		} else if (s == "O") {
+			return global("nat");
+		} else if (s == "S") {
+			return product({{{}, global("nat")}}, global("nat"));
+		} else if (s == "Y") {
+			return builtin_set();
+		} else {
+			return std::nullopt;
+		}
+	};
+
+	auto inductive_resolve = [](const coqcic::constr_t& ind) -> std::optional<coqcic::one_inductive_t> {
+		if (auto glob = ind.as_global()) {
+			if (glob->name() == "nat") {
+				return coqcic::one_inductive_t {
+					"nat",
+					builtin_set(),
+					{
+						{"O", global("nat")},
+						{"S", product({{{}, global("nat")}}, global("nat"))}
+					}
+				};
+			}
+		}
+		return std::nullopt;
+	};
+
+	static const char FIX_EXPR[] =
+		"fun (T : Set) => \n"
+		"(fix f (n : nat) (t : T) : T := \n"
+		"	match n as _ return nat with \n"
+		"	| S n => g n t \n"
+		"	| O => t \n"
+		"	end \n"
+		"with g (n : nat) (t : T) : T := \n"
+		"	match n as _ return nat with \n"
+		"	| S n => f n t \n"
+		"	| O => t \n"
+		"	end \n"
+		"for f). \n";
+
+	auto fix = coqcic::mgl::parse_constr(FIX_EXPR, globals_resolve, inductive_resolve);
+	ASSERT_TRUE(fix) << fix.error().description << "@" << fix.error().location;
+	EXPECT_EQ(
+		"(T : Set => "
+		"(fix f (n : nat) (t : T,3) : T,4 := match n,1 casetype (_ : nat => nat)| S 1 => (n : nat => (g,3 n,0 t,1))| O 0 => t,0 end "
+		"with g (n : nat) (t : T,3) : T,4 := match n,1 casetype (_ : nat => nat)| S 1 => (n : nat => (f,4 n,0 t,1))| O 0 => t,0 end "
+		"for f))",
+		fix.value().debug_string()
+	) << fix.value().debug_string();
+}
+
+
 TEST(minigallina_test, sfb_parse) {
 	using namespace coqcic::builder;
 

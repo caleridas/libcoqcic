@@ -27,7 +27,9 @@ enum keyword_t {
 	keyword_in,
 	keyword_as,
 	keyword_return,
-	keyword_fun
+	keyword_fun,
+	keyword_fix,
+	keyword_for
 };
 
 enum symbol_t {
@@ -370,6 +372,52 @@ public:
 private:
 	std::vector<constr_ast_formarg> args_;
 	std::shared_ptr<const constr_ast_node> body_;
+};
+
+class constr_ast_node_fix final : public constr_ast_node {
+private:
+	struct private_tag {};
+
+public:
+	struct fixfn_t {
+		std::string id;
+		std::shared_ptr<const constr_ast_node> signature;
+		std::shared_ptr<const constr_ast_node> body;
+	};
+
+	~constr_ast_node_fix() override;
+
+	parse_result<constr_t, parse_error>
+	resolve(
+		const lazy_stackmap<std::string>& locals_map,
+		const lazy_stack<type_context_t::local_entry>& locals_types,
+		const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+		const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
+	) const override;
+
+	inline static
+	std::shared_ptr<const constr_ast_node>
+	create(
+		std::size_t location,
+		std::vector<fixfn_t> fns,
+		std::string call
+	) {
+		return std::make_shared<constr_ast_node_fix>(location, std::move(fns), std::move(call), private_tag{});
+	}
+
+	inline
+	constr_ast_node_fix(
+		std::size_t location,
+		std::vector<fixfn_t> fns,
+		std::string call,
+		private_tag
+	) : constr_ast_node(location), fns_(std::move(fns)), call_(std::move(call)) {
+	}
+
+private:
+	std::size_t location_;
+	std::vector<fixfn_t> fns_;
+	std::string call_;
 };
 
 class constr_ast_node_match final : public constr_ast_node {

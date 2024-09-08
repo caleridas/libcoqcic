@@ -46,7 +46,9 @@ static keyword_entry_t keyword_mapping[] = {
 	{keyword_in, "in"},
 	{keyword_as, "as"},
 	{keyword_return, "return"},
-	{keyword_fun, "fun"}
+	{keyword_fun, "fun"},
+	{keyword_fix, "fix"},
+	{keyword_for, "for"}
 };
 
 std::string
@@ -341,6 +343,74 @@ constr_ast_node_lambda::resolve(
 	return builder::lambda(std::move(args), body.move_value());
 }
 
+constr_ast_node_fix::~constr_ast_node_fix() {
+}
+
+parse_result<constr_t, parse_error>
+constr_ast_node_fix::resolve(
+	const lazy_stackmap<std::string>& locals_map,
+	const lazy_stack<type_context_t::local_entry>& locals_types,
+	const std::function<std::optional<constr_t>(const std::string&)>& globals_resolve,
+	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
+) const {
+	auto new_locals_map = locals_map;
+	auto new_locals_types = locals_types;
+
+	std::optional<std::size_t> call_index;
+
+	// Resolve all signatures.
+	std::vector<constr_t> signatures;
+	for (const auto& fn : fns_) {
+		auto sig = fn.signature->resolve(locals_map, locals_types, globals_resolve, inductive_resolve);
+		if (!sig) {
+			return sig.error();
+		}
+		signatures.push_back(sig.value());
+		new_locals_types = new_locals_types.push({fn.id, sig.value()});
+		new_locals_map = new_locals_map.push(fn.id);
+
+	}
+
+	// Now resolve all function bodies and build fix_group.
+	fix_group_t grp;
+	for (std::size_t n = 0; n < fns_.size(); ++n) {
+		auto sig = signatures[n].shift(0, signatures.size());
+		auto prod = sig.as_product();
+		if (!prod) {
+			return parse_error { "fix function signature must be a product", location() };
+		}
+		auto fn_locals_map = new_locals_map;
+		auto fn_locals_types = new_locals_types;
+		for (const auto& formarg : prod->args()) {
+			fn_locals_types = fn_locals_types.push({formarg.name.value_or("_"), formarg.type});
+			fn_locals_map = fn_locals_map.push(formarg.name.value_or("_"));
+		}
+
+		auto body = fns_[n].body->resolve(fn_locals_map, fn_locals_types, globals_resolve, inductive_resolve);
+		if (!body) {
+			return body.error();
+		}
+		grp.functions.push_back(
+			fix_function_t {
+				fns_[n].id,
+				prod->args(),
+				prod->restype(),
+				body.move_value()
+			}
+		);
+
+		if (fns_[n].id == call_) {
+			call_index = n;
+		}
+	}
+
+	if (!call_index) {
+		return parse_error { "unknown function to call in fix: " + call_, location() };
+	}
+
+	return builder::fix(*call_index, std::make_shared<fix_group_t>(std::move(grp)));
+}
+
 constr_ast_node_match::~constr_ast_node_match() {
 }
 
@@ -360,7 +430,7 @@ constr_ast_node_match::resolve(
 
 	auto ind = inductive_resolve(arg_type);
 	if (!ind) {
-		return parse_error { "pattern matching requires an inductive type", location() };
+		return parse_error { "pattern matching requires an inductive type, got " + arg_type.debug_string(), location() };
 	}
 
 	std::string id = as_id_ ? *as_id_ : "";
@@ -761,6 +831,89 @@ parse_constr_ast_formargs(
 }
 
 parse_result<std::shared_ptr<const constr_ast_node>, parse_error>
+parse_constr_ast_fix(
+	token_parser& tokenizer
+) {
+	std::vector<constr_ast_node_fix::fixfn_t> fns;
+	for (;;) {
+		auto id = parse_id(tokenizer);
+		if (!id) {
+			return id.error();
+		}
+		auto formargs = parse_constr_ast_formargs(tokenizer);
+		if (!formargs) {
+			return formargs.error();
+		}
+		auto colon = parse_expect_symbol(tokenizer, symbol_colon);
+		if (!colon) {
+			return colon.error();
+		}
+		auto restype = parse_constr_ast(tokenizer);
+		if (!restype) {
+			return restype.error();
+		}
+		auto signature_loc = tokenizer.location();
+		auto assign = parse_expect_symbol(tokenizer, symbol_assign);
+		if (!assign) {
+			return assign.error();
+		}
+		auto body = parse_constr_ast(tokenizer);
+		if (!body) {
+			return body.error();
+		}
+
+		fns.push_back(
+			constr_ast_node_fix::fixfn_t {
+				id.move_value(),
+				constr_ast_node_product::create(
+					signature_loc,
+					formargs.move_value(),
+					restype.move_value()
+				),
+				body.move_value()
+			}
+		);
+
+		auto loc = tokenizer.location();
+		auto tok = tokenizer.get();
+		if (!tok) {
+			return parse_error { "Expected 'with' or 'for'", tokenizer.location() };
+		}
+		auto more_fixfns = std::visit(
+			[loc, &tokenizer](const auto& arg) -> parse_result<bool, parse_error> {
+				using T = std::decay_t<decltype(arg)>;
+				if constexpr (std::is_same<T, token_keyword>()) {
+					if (arg.keyword == keyword_with) {
+						return true;
+					} else if (arg.keyword == keyword_for) {
+						return false;
+					} else {
+						return parse_error { "Expected 'with' or 'for'", arg.location };
+					}
+				} else  {
+					return parse_error { "Expected 'with' or 'for'", arg.location };
+				}
+			},
+			*tok
+		);
+
+		if (!more_fixfns) {
+			return more_fixfns.error();
+		}
+
+		if (!more_fixfns.value()) {
+			break;
+		}
+	}
+	auto id = parse_id(tokenizer);
+	if (!id) {
+		return id.error();
+	}
+
+	return constr_ast_node_fix::create(tokenizer.location(), std::move(fns), id.move_value());
+}
+
+parse_result<std::shared_ptr<const constr_ast_node>, parse_error>
 parse_constr_ast_inner(
 	token_parser& tokenizer
 ) {
@@ -772,8 +925,7 @@ parse_constr_ast_inner(
 	}
 
 	return std::visit(
-		[loc, &tokenizer](const auto& arg) -> parse_result<std::shared_ptr<const constr_ast_node>, parse_error>
-		{
+		[loc, &tokenizer](const auto& arg) -> parse_result<std::shared_ptr<const constr_ast_node>, parse_error> {
 			using T = std::decay_t<decltype(arg)>;
 			if constexpr (std::is_same<T, token_identifier>()) {
 				return constr_ast_node_id::create(arg.location, arg.identifier);
@@ -935,6 +1087,9 @@ parse_constr_ast_inner(
 						}
 
 						return constr_ast_node_lambda::create(loc, args.move_value(), body.move_value());
+					}
+					case keyword_fix: {
+						return parse_constr_ast_fix(tokenizer);
 					}
 					default: {
 						return parse_error { "unexpected keyword " + keyword_name(arg.keyword), arg.location };
