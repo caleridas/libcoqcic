@@ -117,7 +117,7 @@ branches_from_sexpr(const sexpr& e) {
 }
 
 from_sexpr_result<fix_function_t>
-fixfunction_from_sexpr(const sexpr& e) {
+fixfunction_from_sexpr(const sexpr& e, std::size_t nfunctions) {
 	if (auto c = e.as_compound()) {
 		const auto& kind = c->kind();
 		const auto& args = c->args();
@@ -170,7 +170,7 @@ fixfunction_from_sexpr(const sexpr& e) {
 				}
 			}
 
-			return fix_function_t{std::move(realname), std::move(args), std::move(sigtype), std::move(fndef)};
+			return fix_function_t{std::move(realname), std::move(args), sigtype.shift(0, nfunctions), std::move(fndef)};
 		} else {
 			return from_sexpr_error {"Unable to parse fixfunction", &e};
 		}
@@ -357,7 +357,7 @@ constr_from_sexpr(const sexpr& e) {
 			std::vector<fix_function_t> fns;
 			for (std::size_t n = 1; n < args.size(); ++n) {
 				const auto& arg = args[n];
-				auto fixfn = fixfunction_from_sexpr(arg);
+				auto fixfn = fixfunction_from_sexpr(arg, args.size() - 1);
 				if (!fixfn) {
 					return fixfn.error();
 				}

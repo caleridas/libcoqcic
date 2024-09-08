@@ -156,8 +156,10 @@ struct fix_function_t {
 
 // A bundle fixpoint functions that mutually depend on each other.
 struct fix_group_t {
-	using function = fix_function_t;
 	std::vector<fix_function_t> functions;
+
+	constr_t
+	get_function_signature(std::size_t index) const;
 
 	inline bool
 	operator==(const fix_group_t& other) const noexcept {

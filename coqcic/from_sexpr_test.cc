@@ -218,3 +218,127 @@ TEST(from_sexpr_test, parse_sfb_module) {
 		"End.");
 }
 
+TEST(from_sexpr_test, parse_fix_expression) {
+	static const char FIX_EXAMPLE[] = R"(
+		(Fix
+			0
+			(Function
+				(Name f)
+				(Prod
+					(Name n)
+					(Global Coq.Init.Datatypes.nat)
+					(Prod (Name t) (Local T 1) (Local T 2))
+				)
+				(Lambda
+					(Name n)
+					(Global Coq.Init.Datatypes.nat)
+					(Lambda
+						(Name t)
+						(Local T 3)
+						(Case
+							0
+							(Lambda
+								(Name n)
+								(Global Coq.Init.Datatypes.nat)
+								(Local T 5)
+							)
+							(Match (Local n 1))
+							(Branches
+								(Branch
+									Coq.Init.Datatypes.O
+									0
+									(Local t 0)
+								)
+								(Branch
+									Coq.Init.Datatypes.S
+									1
+									(Lambda
+										(Name n)
+										(Global Coq.Init.Datatypes.nat)
+										(App (Local g 3) (Local n 0) (Local t 1))
+									)
+								)
+							)
+						)
+					)
+				)
+			)
+			(Function
+				(Name g)
+				(Prod
+					(Name n)
+					(Global Coq.Init.Datatypes.nat)
+					(Prod (Name t) (Local T 1) (Local T 2))
+				)
+				(Lambda
+					(Name n)
+					(Global Coq.Init.Datatypes.nat)
+					(Lambda
+						(Name t)
+						(Local T 3)
+						(Case
+							0
+							(Lambda
+								(Name n)
+								(Global Coq.Init.Datatypes.nat)
+								(Local T 5)
+							)
+							(Match (Local n 1))
+							(Branches
+								(Branch
+									Coq.Init.Datatypes.O
+									0
+									(Local t 0)
+								)
+								(Branch
+									Coq.Init.Datatypes.S
+									1
+									(Lambda
+										(Name n)
+										(Global Coq.Init.Datatypes.nat)
+										(App (Local f 4) (Local n 0) (Local t 1))
+									)
+								)
+							)
+						)
+					)
+				)
+			)
+		)
+)";
+	auto e = coqcic::parse_sexpr(FIX_EXAMPLE);
+	ASSERT_TRUE(e) << e.error().description << ":" << e.error().location;
+	auto fix = constr_from_sexpr(e.value());
+	ASSERT_TRUE(fix) << fix.error().description;
+	ASSERT_EQ(
+		fix.value().debug_string(),
+		"(fix f (n : Coq.Init.Datatypes.nat) (t : T,3) : T,4 := match n,1 casetype (n : Coq.Init.Datatypes.nat => T,5)"
+		"| Coq.Init.Datatypes.O 0 => t,0"
+		"| Coq.Init.Datatypes.S 1 => (n : Coq.Init.Datatypes.nat => (g,3 n,0 t,1)) "
+		"end with g (n : Coq.Init.Datatypes.nat) (t : T,3) : T,4 := match n,1 casetype (n : Coq.Init.Datatypes.nat => T,5)"
+		"| Coq.Init.Datatypes.O 0 => t,0"
+		"| Coq.Init.Datatypes.S 1 => (n : Coq.Init.Datatypes.nat => (f,4 n,0 t,1)) "
+		"end for f)"
+	);
+
+	auto as_fix = fix.value().as_fix();
+	ASSERT_TRUE(as_fix);
+	const auto& group = *as_fix->group();
+
+	EXPECT_EQ(
+		group.get_function_signature(0),
+		coqcic::builder::product(
+			{
+				{
+					"n",
+					coqcic::builder::global("Coq.Init.Datatypes.nat")
+				},
+				{
+					"t",
+					coqcic::builder::local("T", 1)
+				}
+			},
+			coqcic::builder::local("T", 2)
+		)
+	);
+}

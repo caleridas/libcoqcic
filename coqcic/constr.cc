@@ -280,6 +280,25 @@ collect_external_references(const constr_t& obj) {
 	return refs;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// fix_group_t
+
+constr_t
+fix_group_t::get_function_signature(std::size_t index) const {
+	std::vector<formal_arg_t> formargs;
+	for (const auto& formarg : functions[index].args) {
+		formargs.push_back(
+			formal_arg_t {
+				formarg.name,
+				formarg.type.shift(0, -functions.size())
+			}
+		);
+	}
+	auto restype = functions[index].restype.shift(0, -functions.size());
+	return builder::product(std::move(formargs), std::move(restype));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // type_context_t
 
