@@ -2,6 +2,7 @@ default: all
 
 libcoqcic_SOURCES = \
 	coqcic/constr.cc \
+	coqcic/debruijn.cc \
 	coqcic/fix_specialize.cc \
 	coqcic/from_sexpr.cc \
 	coqcic/normalize.cc \

@@ -30,8 +30,17 @@ class constr_fix;
 
 class type_context_t;
 
+/**
+	\brief A coqcic term construction
+
+	Represents a term construct in the Coq calculus of
+	inductive constructions.
+*/
 class constr_t {
 public:
+	/**
+		\brief Construct constr from internally-generated constr type
+	*/
 	explicit
 	inline
 	constr_t(
@@ -41,38 +50,141 @@ public:
 
 	constr_t() noexcept = default;
 
+	/**
+		\brief Assign constr
+	*/
 	inline constr_t&
 	operator=(constr_t other) noexcept {
 		swap(other);
 		return *this;
 	}
 
+	/**
+		\brief Swaps two constr
+	*/
 	inline void
 	swap(constr_t& other) noexcept {
 		repr_.swap(other.repr_);
 	}
 
+	/**
+		\brief Generates human-readable representation
+
+		\param out
+			String to append representation to
+	*/
 	void
 	format(std::string& out) const;
 
+	/**
+		\brief Compares for equality with other term
+		\param other
+			Term to compare to
+		\returns
+			Equality comparison result
+
+		Compares two term constructions for equality. Note
+		that this checks for strict structural equality (i.e.
+		grouping of nested lambda/product is significant), but
+		does not check for names of local variables (just their
+		de Bruijn indices).
+	*/
 	bool
 	operator==(const constr_t& other) const;
 
+	/**
+		\brief Compares for inequality with other term
+		\param other
+			Term to compare to
+		\returns
+			Inequality comparison result
+
+		Just the opposite of \ref operator==.
+	*/
 	inline
 	bool operator!=(const constr_t& other) const { return ! (*this == other); }
 
+	/**
+		\brief Checks type of constr
+		\param ctx
+			Typing context.
+
+		\returns
+			Expression representing type of object.
+
+		Computes an expression for the type of this object,
+		within the given typing context. The typing context
+		must be able to resolve all global (and ubound local)
+		variables.
+	*/
 	constr_t
 	check(const type_context_t& ctx) const;
 
+	/**
+		\brief Simplifies term.
+
+		\returns
+			Simplified term.
+
+		Resolves apply / lambda pairs to produce a simplified term.
+	*/
 	constr_t
 	simpl() const;
 
+	/**
+		\brief Shifts de Bruijn indices.
+
+		\param limit
+			Lower limit of de Bruijn indices to be shifted. All indices
+			>= limit will be shifted.
+		\param dir
+			Offset to be added to de Bruijn indices.
+
+		\returns
+			Modified term.
+
+		Shifts (subset of) de Bruijn indices occuring in term,
+		recursively. All indices >=limit (as viewed from root)
+		will be modified by the given offset. Note that this
+		can only ever affect "unbound" indices.
+
+		Example: Consider the term:
+
+			lambda (x : nat) : nat := '0 + '1
+
+		The body of the lambda expression has two local
+		variable references: '0 refers to its defined
+		formal argument, while '1 refers to the zeroe'th
+		object outside this term. Calling "shift(0, +1)"
+		results in:
+
+			lambda (x : nat) : nat := '0 + '2
+
+		Calling "shift(1, +1)" results in:
+
+			lambda (x : nat) : nat := '0 + '1
+
+		The latter operation does not cause a change because '1 inside
+		the lambda abstraction refers to the zeroe'th unbound variable
+		for the term as a whole.
+	*/
 	constr_t
 	shift(std::size_t limit, int dir) const;
 
+	/**
+		\brief Generates a debug string.
+
+		\returns Human-readable string for diagnostic purposes.
+
+		Generates a string that may be useful in understanding the
+		structure of a term construction for error diagnostics.
+	*/
 	std::string
 	debug_string() const;
 
+	/**
+		\brief Access the underlying representation object
+	*/
 	const
 	std::shared_ptr<const constr_base>&
 	repr() const noexcept {
@@ -84,17 +196,134 @@ public:
 		return std::move(repr_);
 	}
 
+	/**
+		\brief Return \ref constr_local or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_local* as_local() const noexcept;
+	/**
+		\brief Return \ref constr_global or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_global* as_global() const noexcept;
+	/**
+		\brief Return \ref constr_builtin or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_builtin* as_builtin() const noexcept;
+	/**
+		\brief Return \ref constr_product or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_product* as_product() const noexcept;
+	/**
+		\brief Return \ref constr_lambda or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_lambda* as_lambda() const noexcept;
+	/**
+		\brief Return \ref constr_let or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_let* as_let() const noexcept;
+	/**
+		\brief Return \ref constr_apply or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_apply* as_apply() const noexcept;
+	/**
+		\brief Return \ref constr_cast or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_cast* as_cast() const noexcept;
+	/**
+		\brief Return \ref constr_match or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_match* as_match() const noexcept;
+	/**
+		\brief Return \ref constr_fix or nullptr
+
+		Checks the constr for the requested type, returns pointer
+		to underlynig structure or nullptr.
+	*/
 	inline const constr_fix* as_fix() const noexcept;
 
+	/**
+		\fn constr_t::visit
+		\brief Discriminates kind of constr
+
+		\param vis
+			Visitor functional. Should be an overloaded / type generic lambda.
+		\returns
+			Value returned by the visitor
+
+		Determines the underlying kind of constr represented by this
+		object, and dispatches to the given visitor function with the
+		specific type of constr. See
+			\ref constr_local,
+			\ref constr_global,
+			\ref constr_builtin,
+			\ref constr_product,
+			\ref constr_lambda,
+			\ref constr_let,
+			\ref constr_apply,
+			\ref constr_cast,
+			\ref constr_match,
+			\ref constr_fix.
+
+		Canonically, the visitor should have the following structure:
+		\code
+			constr.visit(
+				[](const auto& const) {
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same<T, coqcic::constr_local>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_global>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_builtin>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_product>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_lambda>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_let>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_apply>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_cast>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_match>()) {
+						...
+					} else if constexpr (std::is_same<T, coqcic::constr_fix>()) {
+						...
+					} else {
+						throw std::logic_error("non-exhaustice pattern matching on constr_t");
+					}
+				}
+			);
+		\endcode
+
+		The visitor may omit handling constructions that it is not interested in.
+	*/
 	template<typename Visitor>
 	inline auto
 	visit(Visitor&& vis) const;
@@ -103,8 +332,21 @@ private:
 	std::shared_ptr<const constr_base> repr_;
 };
 
-// A formal argument to a function.
+/**
+	\brief A formal argument (to a function)
+
+	Represents a single formal argument of a function (lambda
+	or fixpoint).
+*/
 struct formal_arg_t {
+	/**
+		\brief Name of the formal argument
+
+		The name assigned in Gallina to this formal argument.
+		Note that the name is purely informative, all references
+		to arguments are represented as
+		\ref de_bruijn_indices "de  Bruijn indices".
+	*/
 	std::optional<std::string> name;
 	constr_t type;
 
@@ -119,13 +361,32 @@ struct formal_arg_t {
 	operator!=(const formal_arg_t& other) const noexcept { return ! (*this == other); }
 };
 
-// A single case branch of a "match" expression.
+/**
+	\brief Single branch of a match expression
+*/
 struct match_branch_t {
-	// Id of the constructor that is matched on.
+	/**
+		\brief id of the constructor to be matched against
+
+		This is the id of the constructor to be matched against.
+		It should be the fully qualified name id of the
+		constructor, so to resolve the name against the
+		list of constructors held in an \ref one_inductive_t
+		"inductive definition" this may need to be stripped
+		of any module prefix.
+	*/
 	std::string constructor;
-	// Number of arguments matched.
+
+	/**
+		\brief Number of arguments matched
+	*/
 	std::size_t nargs;
-	// Lambda expression of the match.
+	/**
+		\brief Match expression
+
+		This is a lambda expression where the first arguments
+		are filled in with the extracted constructor arguments.
+	*/
 	constr_t expr;
 
 	inline bool
@@ -137,15 +398,44 @@ struct match_branch_t {
 	}
 };
 
-// A single function of a mutual fixpoint bundle.
+/**
+	\brief Single function of a mutual fixpoint bundle.
+*/
 struct fix_function_t {
-	// Name of the function within the bundle.
+	/**
+		\brief Name of the function within the bundle.
+
+		The name assigned in Gallina to this function.
+		Note that the name is purely informative, all references
+		to functions are represented as
+		\ref de_bruijn_indices "de  Bruijn indices".
+	*/
 	std::string name;
-	// Formal arguments of this function.
+
+	/**
+		\brief Formal arguments of this function.
+
+		The formal arguments of this function, similar as for
+		a \ref constr_lambda "lambda construct". Note however
+		that the de Bruijn indices for an entire fix point
+		function differs as it must be interpreted relative
+		to the context of the fixpoint functions themselves.
+
+		See \ref de_bruijn_fix.
+	*/
 	std::vector<formal_arg_t> args;
-	// Result type of this function (dependent on args).
+	/**
+		\brief Result type of this function.
+
+		The result type of this function -- see \ref de_bruijn_fix
+		for interpretation of de Bruijn indices for fixpoint bundles.
+	*/
 	constr_t restype;
-	// Body of this function (dependent on all functions in this bundle as well as the args).
+	/**
+		\brief Computation body of this function.
+		The computation body of this function -- see \ref de_bruijn_fix
+		for interpretation of de Bruijn indices for fixpoint bundles.
+	*/
 	constr_t body;
 
 	inline bool
@@ -154,10 +444,31 @@ struct fix_function_t {
 	}
 };
 
-// A bundle fixpoint functions that mutually depend on each other.
+/**
+	\brief A bundle of one or more mutually dependent fixpoint functions
+*/
 struct fix_group_t {
+	/**
+		\brief The functions in the bundle.
+	*/
 	std::vector<fix_function_t> functions;
 
+	/**
+		\brief Obtain signature of a function in this bundle.
+
+		\param index
+			Index of the function, must be within bounds of \ref functions.
+
+		\returns
+			Signature of the function.
+
+		Returns the signature of the index'th function of the bundle,
+		represented as a dependent product. de Bruijn indices are
+		adjusted such that the returned signature can be interpreted
+		in the context of the fix expression.
+
+		See \ref de_bruijn_fix for more detailed explanation.
+	*/
 	constr_t
 	get_function_signature(std::size_t index) const;
 
@@ -167,27 +478,71 @@ struct fix_group_t {
 	}
 };
 
-// Collect the de Bruijn indices of all locals in this object that
-// are not resolvable within the construct itself.
+/**
+	\brief Collects unresolved de Bruijn indices
+
+	\param obj
+		The object to inspect
+
+	\returns
+		Collection of all unresolved references (empty if none).
+
+	Collects the de Bruijn indices of all locals in this object that
+	are not resolvable within the construct itself. All indices are
+	shifted such that they are from the point of view of the
+	top-level object.
+*/
 std::vector<std::size_t>
 collect_external_references(const constr_t& obj);
 
-// Context for type checking operation on constr objects.
+/**
+	\brief Context for type checking operations.
+
+	Context for type checking operation on constr objects.
+*/
 class type_context_t {
 public:
+	/**
+		\brief Create a new type with additional local
+
+		\param name
+			Name of the local variable. This is informative only,
+			it plays no role in resolution.
+
+		\param type
+			Type of the local variable.
+
+		\returns
+			New type context object.
+	*/
 	type_context_t push_local(std::string name, constr_t type) const;
 
+	/**
+		\brief Local variable entry.
+	*/
 	struct local_entry {
 		std::string name;
 		constr_t type;
 	};
 
+	/**
+		\brief Stack of local variables.
+	*/
 	lazy_stack<local_entry> locals;
 
-	// Map constr_global name to its type
+	/**
+		\brief Map constr_global name to its type.
+	*/
 	std::function<constr_t(const std::string&)> global_types;
 };
 
+/**
+	\brief Abstract base representation class for CIC constructs.
+
+	Abstract base class for representing the different kinds of CIC
+	constructs. Generally, avoid interacting with this directly
+	instead of the wrapper \ref constr_t.
+*/
 class constr_base : public std::enable_shared_from_this<constr_base> {
 public:
 	virtual
@@ -217,6 +572,12 @@ public:
 	repr() const;
 };
 
+/**
+	\brief Reference to local variable
+
+	Rperesents a reference to a locally bound variable
+	(e.g. as a function argument or "let" expression).
+*/
 class constr_local final : public constr_base {
 public:
 	~constr_local() override;
@@ -250,6 +611,9 @@ private:
 	std::size_t index_;
 };
 
+/**
+	\brief Reference to global name
+*/
 class constr_global final : public constr_base {
 public:
 	~constr_global() override;
@@ -275,6 +639,9 @@ private:
 	std::string name_;
 };
 
+/**
+	\brief Builtin universe type
+*/
 class constr_builtin final : public constr_base {
 public:
 	~constr_builtin() override;
@@ -318,6 +685,9 @@ private:
 	std::function<constr_t(const constr_base&)> check_;
 };
 
+/**
+	\brief Dependent product.
+*/
 class constr_product final : public constr_base {
 public:
 	~constr_product() override;
@@ -336,10 +706,22 @@ public:
 	constr_t
 	shift(std::size_t limit, int dir) const override;
 
+	/**
+		\brief Formal argument of the product
+
+		See \ref de_bruijn_product for details on interpreting
+		the arguments.
+	*/
 	inline
 	const std::vector<formal_arg_t>&
 	args() const noexcept { return args_; }
 
+	/**
+		\brief Result type of the product
+
+		See \ref de_bruijn_product for details on interpreting
+		the arguments.
+	*/
 	inline
 	const constr_t&
 	restype() const noexcept { return restype_; }
@@ -349,6 +731,9 @@ private:
 	constr_t restype_;
 };
 
+/**
+	\brief Lambda abstraction.
+*/
 class constr_lambda final : public constr_base {
 public:
 	~constr_lambda() override;
@@ -381,6 +766,9 @@ private:
 	constr_t body_;
 };
 
+/**
+	\brief Let binding.
+*/
 class constr_let final : public constr_base {
 public:
 	~constr_let() override;
@@ -427,6 +815,9 @@ private:
 	constr_t body_;
 };
 
+/**
+	\brief Functional application (call).
+*/
 class constr_apply final : public constr_base {
 public:
 	~constr_apply() override;
@@ -461,6 +852,9 @@ private:
 	std::vector<constr_t> args_;
 };
 
+/**
+	\brief Cast expression.
+*/
 class constr_cast final : public constr_base {
 public:
 	enum kind_type {
@@ -504,6 +898,9 @@ private:
 	constr_t typeterm_;
 };
 
+/**
+	\brief Pattern matching expression.
+*/
 class constr_match final : public constr_base {
 public:
 	~constr_match() override;
@@ -548,6 +945,9 @@ private:
 	std::vector<match_branch_t> branches_;
 };
 
+/**
+	\brief Mutual fixpoint function group.
+*/
 class constr_fix final : public constr_base {
 public:
 	~constr_fix() override;
