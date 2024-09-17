@@ -2,8 +2,6 @@
 
 #include <sstream>
 
-#include <iostream>
-
 #include "coqcic/normalize.h"
 
 namespace coqcic {
