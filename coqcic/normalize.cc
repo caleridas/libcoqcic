@@ -4,10 +4,6 @@ namespace coqcic {
 
 namespace {
 
-// Normalizes the given expression, that means:
-// - "apply-of-apply" will be flattened into a single apply
-// - "product-of-product" will be flattened into a single product
-// - "lambda-of-lambda" will be flattened into a single lambda
 std::optional<constr_t>
 normalize_rec(const constr_t& input) {
 	if (input.as_local()) {
@@ -39,7 +35,7 @@ normalize_rec(const constr_t& input) {
 		changed = changed || maybe_restype;
 
 		if (changed) {
-			return builder::product(std::move(args), new_restype);
+			return constr_product::create(std::move(args), new_restype);
 		} else {
 			return {};
 		}
@@ -66,7 +62,7 @@ normalize_rec(const constr_t& input) {
 		changed = changed || maybe_body;
 
 		if (changed) {
-			return builder::lambda(std::move(args), new_body);
+			return constr_lambda::create(std::move(args), new_body);
 		} else {
 			return {};
 		}
@@ -81,7 +77,7 @@ normalize_rec(const constr_t& input) {
 		const auto& body = maybe_body ? *maybe_body : let->body();
 
 		if (maybe_value || maybe_type || maybe_body) {
-			return builder::let(let->varname(), value, type, body);
+			return constr_let::create(let->varname(), value, type, body);
 		} else {
 			return {};
 		}
@@ -110,7 +106,7 @@ normalize_rec(const constr_t& input) {
 		const auto& new_fn = maybe_fn ? *maybe_fn : fn;
 		if (changed) {
 			std::reverse(args.begin(), args.end());
-			return builder::apply(new_fn, std::move(args));
+			return constr_apply::create(new_fn, std::move(args));
 		} else {
 			return {};
 		}
@@ -122,7 +118,7 @@ normalize_rec(const constr_t& input) {
 		const auto& typeterm = maybe_typeterm ? *maybe_typeterm : cast->typeterm();
 
 		if (maybe_term || maybe_typeterm) {
-			return builder::cast(term, cast->kind(), typeterm);
+			return constr_cast::create(term, cast->kind(), typeterm);
 		} else {
 			return {};
 		}
@@ -145,7 +141,7 @@ normalize_rec(const constr_t& input) {
 		changed = changed || maybe_arg || maybe_casetype;
 
 		if (changed) {
-			return builder::match(casetype, arg, branches);
+			return constr_match::create(casetype, arg, branches);
 		} else {
 			return {};
 		}
@@ -177,7 +173,7 @@ normalize_rec(const constr_t& input) {
 		}
 
 		if (changed) {
-			return builder::fix(fix->index(), std::move(new_group));
+			return constr_fix::create(fix->index(), std::move(new_group));
 		} else {
 			return {};
 		}

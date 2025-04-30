@@ -194,22 +194,22 @@ constr_ast_node_id::resolve(
 	const std::function<std::optional<one_inductive_t>(const constr_t&)>& inductive_resolve
 ) const {
 	if (id() == "Set") {
-		return builder::builtin_set();
+		return constr_builtin::set();
 	}
 	if (id() == "Prop") {
-		return builder::builtin_prop();
+		return constr_builtin::prop();
 	}
 	if (id() == "Type") {
-		return builder::builtin_type();
+		return constr_builtin::type();
 	}
 	auto i = locals_map.get_index(id());
 	if (i) {
-		return builder::local(id(), *i);
+		return constr_local::create(id(), *i);
 	}
 
 	auto g = globals_resolve(id());
 	if (g) {
-		return builder::global(id());
+		return constr_global::create(id());
 	}
 
 	return parse_error { "Cannot resolve name '" + id() + "'", location() };
@@ -240,7 +240,7 @@ constr_ast_node_apply::resolve(
 		args.push_back(res.move_value());
 	}
 
-	return builder::apply(std::move(fn), std::move(args));
+	return constr_apply::create(std::move(fn), std::move(args));
 }
 
 constr_ast_node_let::~constr_ast_node_let() {
@@ -272,7 +272,7 @@ constr_ast_node_let::resolve(
 		return body.error();
 	}
 
-	return builder::let(varname_, std::move(value.value()), std::move(type.value()), std::move(body.value()));
+	return constr_let::create(varname_, std::move(value.value()), std::move(type.value()), std::move(body.value()));
 }
 
 constr_ast_node_product::~constr_ast_node_product() {
@@ -305,7 +305,7 @@ constr_ast_node_product::resolve(
 		return restype.error();
 	}
 
-	return builder::product(std::move(args), restype.move_value());
+	return constr_product::create(std::move(args), restype.move_value());
 }
 
 constr_ast_node_lambda::~constr_ast_node_lambda() {
@@ -338,7 +338,7 @@ constr_ast_node_lambda::resolve(
 		return body.error();
 	}
 
-	return builder::lambda(std::move(args), body.move_value());
+	return constr_lambda::create(std::move(args), body.move_value());
 }
 
 constr_ast_node_fix::~constr_ast_node_fix() {
@@ -406,7 +406,7 @@ constr_ast_node_fix::resolve(
 		return parse_error { "unknown function to call in fix: " + call_, location() };
 	}
 
-	return builder::fix(*call_index, std::make_shared<fix_group_t>(std::move(grp)));
+	return constr_fix::create(*call_index, std::make_shared<fix_group_t>(std::move(grp)));
 }
 
 constr_ast_node_match::~constr_ast_node_match() {
@@ -439,7 +439,7 @@ constr_ast_node_match::resolve(
 	if (!restype) {
 		return restype.error();
 	}
-	auto casetype = builder::lambda({{id, arg_type}}, restype.move_value());
+	auto casetype = constr_lambda::create({{id, arg_type}}, restype.move_value());
 
 	std::vector<match_branch_t> branches;
 	for (const auto& branch : branches_) {
@@ -470,13 +470,13 @@ constr_ast_node_match::resolve(
 		// the constructor should be omitted during.
 		std::size_t arg_count = formal_args.size();
 		auto branch_expr = formal_args.size() ?
-			builder::lambda(std::move(formal_args), branch_body.move_value()) :
+			constr_lambda::create(std::move(formal_args), branch_body.move_value()) :
 			branch_body.move_value();
 
 		branches.push_back(match_branch_t { branch.constructor, arg_count, std::move(branch_expr) });
 	}
 
-	return builder::match(std::move(casetype), arg.move_value(), std::move(branches));
+	return constr_match::create(std::move(casetype), arg.move_value(), std::move(branches));
 }
 
 token_parser::token_parser(std::istream& is) : is_(is) {
@@ -1386,7 +1386,7 @@ parse_sfb_definition(
 
 	symtab.id_to_type[make_mod_id(mod_context, id.value())] = type.value();
 
-	return builder::definition(id.move_value(), type.move_value(), expr.move_value());
+	return sfb_definition::create(id.move_value(), type.move_value(), expr.move_value());
 }
 
 parse_result<sfb_t, parse_error>
@@ -1454,7 +1454,7 @@ parse_sfb_inductive(
 			return type.error();
 		}
 
-		auto restype = formargs.empty() ? type.move_value() : normalize(builder::product(formargs, type.move_value()));
+		auto restype = formargs.empty() ? type.move_value() : normalize(constr_product::create(formargs, type.move_value()));
 		inductive_globals[oind.id] = restype;
 
 		oinds.push_back(one_inductive_t{oind.id, restype, {}});
@@ -1491,7 +1491,7 @@ parse_sfb_inductive(
 			if (!type) {
 				return type.error();
 			}
-			auto constype = formargs.empty() ? normalize(type.move_value()) : normalize(builder::product(formargs, type.move_value()));
+			auto constype = formargs.empty() ? normalize(type.move_value()) : normalize(constr_product::create(formargs, type.move_value()));
 			oind.constructors.push_back(constructor_t {cons.id, std::move(constype)} );
 		}
 	}
@@ -1505,7 +1505,7 @@ parse_sfb_inductive(
 		}
 	}
 
-	return builder::inductive(std::move(oinds));
+	return sfb_inductive::create(std::move(oinds));
 }
 
 parse_result<sfb_t, parse_error>
@@ -1627,7 +1627,7 @@ parse_sfb_fixpoint(
 	lazy_stack<type_context_t::local_entry> locals_types;
 	// Push function names and signatures as local context variables.
 	for (const auto& sig : sigs) {
-		auto type = builder::product(sig.args, sig.restype);
+		auto type = constr_product::create(sig.args, sig.restype);
 		locals_types = locals_types.push({sig.name, type});
 		locals_map = locals_map.push(sig.name);
 	}
@@ -1657,10 +1657,10 @@ parse_sfb_fixpoint(
 	}
 
 	for (const auto& fn : group.functions) {
-		symtab.id_to_type[make_mod_id(mod_context, fn.name)] = builder::product(fn.args, fn.restype);
+		symtab.id_to_type[make_mod_id(mod_context, fn.name)] = constr_product::create(fn.args, fn.restype);
 	}
 
-	return builder::fixpoint(std::move(group));
+	return sfb_fixpoint::create(std::move(group));
 }
 
 parse_result<sfb_t, parse_error>
@@ -1721,7 +1721,7 @@ parse_sfb_module(
 		return end_id.error();
 	}
 
-	return builder::module_def(
+	return sfb_module::create(
 		id.move_value(),
 		module_body(
 			/* parameters */ {},

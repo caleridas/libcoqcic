@@ -2,17 +2,18 @@
 
 #include "gtest/gtest.h"
 
-TEST(normalize_test, lambda_apply) {
-	using namespace coqcic::builder;
-	auto o = lambda(
-		{{"a", global("nat")}},
-		lambda(
-			{{"b", global("nat")}},
-			apply(apply(global("plus"), {local("a", 0)}), {local("b", 1)})));
+namespace coqcic {
 
-	auto e = lambda(
-		{{"a", global("nat")},{"b", global("nat")}},
-		apply(global("plus"), {local("a", 0), local("b", 1)}));
+TEST(normalize_test, lambda_apply) {
+	auto o = constr_lambda::create(
+		{{"a", constr_global::create("nat")}},
+		constr_lambda::create(
+			{{"b", constr_global::create("nat")}},
+			constr_apply::create(constr_apply::create(constr_global::create("plus"), {constr_local::create("a", 0)}), {constr_local::create("b", 1)})));
+
+	auto e = constr_lambda::create(
+		{{"a", constr_global::create("nat")},{"b", constr_global::create("nat")}},
+		constr_apply::create(constr_global::create("plus"), {constr_local::create("a", 0), constr_local::create("b", 1)}));
 	auto n = normalize(o);
 
 
@@ -21,8 +22,13 @@ TEST(normalize_test, lambda_apply) {
 	coqcic::type_context_t ctx;
 	ctx.global_types = [](const std::string& sym) {
 		if (sym == "plus") {
-			return product({{"_", global("nat")}}, product({{"_", global("nat")}}, global("nat")));
-		} else return builtin_type();
+			return constr_product::create(
+				{{"_", constr_global::create("nat")}}, constr_product::create({{"_", constr_global::create("nat")}},
+				constr_global::create("nat"))
+			);
+		} else {
+			return constr_builtin::type();
+		}
 	};
 
 	auto oc = o.check(ctx);
@@ -30,3 +36,5 @@ TEST(normalize_test, lambda_apply) {
 	auto ec = e.check(ctx);
 	std::cout << ec.debug_string() << "\n";
 }
+
+}  // namespace coqcic

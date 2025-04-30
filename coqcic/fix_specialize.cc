@@ -299,11 +299,11 @@ public:
 	std::optional<constr_t>
 	handle_local(const std::string& name, std::size_t index) override {
 		if (index >= locals_.size()) {
-			return builder::local(name, index - extra_shift_);
+			return constr_local::create(name, index - extra_shift_);
 		} else {
 			auto repl = locals_.at(index);
 			if (auto shift = std::get_if<replace_shift>(&repl)) {
-				return builder::local(name, index + shift->offset - extra_shift_);
+				return constr_local::create(name, index + shift->offset - extra_shift_);
 			} else if (auto subst = std::get_if<replace_subst>(&repl)) {
 				return {subst->subst.shift(0, depth_)};
 			} else {
@@ -317,7 +317,7 @@ public:
 		if (auto lambda = fn.as_lambda()) {
 			(void) lambda;
 			// XXX: conditionally resolve apply/lambda
-			return builder::apply(fn, args).simpl();
+			return constr_apply::create(fn, args).simpl();
 		} else {
 			return {};
 		}
@@ -349,20 +349,20 @@ apply_fix_specialization(
 			}
 		}
 		// Build inner call expression, with specialized arguments removed.
-		auto expr = builder::local(namegen(fn_index), arg_count + group.functions.size() - fn_index);
+		auto expr = constr_local::create(namegen(fn_index), arg_count + group.functions.size() - fn_index);
 		std::vector<constr_t> args;
 		for (std::size_t n = 0; n < fn.args.size(); ++n) {
 			if (!info.functions[fn_index].spec_args[n]) {
-				args.push_back(builder::local(fn.args[n].name ? *fn.args[n].name : "_", fn.args.size() - n -1));
+				args.push_back(constr_local::create(fn.args[n].name ? *fn.args[n].name : "_", fn.args.size() - n -1));
 			}
 		}
 		if (!args.empty()) {
-			expr = builder::apply(expr, std::move(args));
+			expr = constr_apply::create(expr, std::move(args));
 		}
 		// Abstract over call expression, preserving all arguments this time.
 		for (std::size_t n = 0; n < fn.args.size(); ++n) {
 			std::size_t i = fn.args.size() - n - 1;
-			expr = builder::lambda({{fn.args[i].name ? *fn.args[i].name : "_", fn.args[i].type}}, expr);
+			expr = constr_lambda::create({{fn.args[i].name ? *fn.args[i].name : "_", fn.args[i].type}}, expr);
 		}
 		fix_locals = fix_locals.push(replace_subst{std::move(expr)});
 	}

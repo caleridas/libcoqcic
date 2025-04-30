@@ -2,20 +2,20 @@
 
 #include "gtest/gtest.h"
 
-TEST(minigallina_test, constr_parse) {
-	using namespace coqcic::builder;
+namespace coqcic {
 
+TEST(minigallina_test, constr_parse) {
 	auto globals_resolve = [](const std::string& s) -> std::optional<coqcic::constr_t> {
 		if (s == "Coq.Init.Datatypes.nat") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else if (s == "nat") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else if (s == "O") {
-			return global("nat");
+			return constr_global::create("nat");
 		} else if (s == "S") {
-			return product({{{}, global("nat")}}, global("nat"));
+			return constr_product::create({{{}, constr_global::create("nat")}}, constr_global::create("nat"));
 		} else if (s == "Y") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else {
 			return std::nullopt;
 		}
@@ -26,10 +26,10 @@ TEST(minigallina_test, constr_parse) {
 			if (glob->name() == "nat") {
 				return coqcic::one_inductive_t {
 					"nat",
-					builtin_set(),
+					constr_builtin::set(),
 					{
-						{"O", global("nat")},
-						{"S", product({{{}, global("nat")}}, global("nat"))}
+						{"O", constr_global::create("nat")},
+						{"S", constr_product::create({{{}, constr_global::create("nat")}}, constr_global::create("nat"))}
 					}
 				};
 			}
@@ -38,24 +38,24 @@ TEST(minigallina_test, constr_parse) {
 	};
 
 	EXPECT_EQ(
-		builtin_prop(),
+		constr_builtin::prop(),
 		coqcic::mgl::parse_constr("Prop", {}, {}).value());
 
 	EXPECT_EQ(
-		global("Coq.Init.Datatypes.nat"),
+		constr_global::create("Coq.Init.Datatypes.nat"),
 		coqcic::mgl::parse_constr("Coq.Init.Datatypes.nat", globals_resolve, {}).value()
 	);
 
 	EXPECT_EQ(
-		let("x", global("O"), global("nat"), local("x", 0)),
+		constr_let::create("x", constr_global::create("O"), constr_global::create("nat"), constr_local::create("x", 0)),
 		coqcic::mgl::parse_constr("let x : nat := O in x", globals_resolve, inductive_resolve).value());
 
 	EXPECT_EQ(
-		apply(global("S"), {global("O")}),
+		constr_apply::create(constr_global::create("S"), {constr_global::create("O")}),
 		coqcic::mgl::parse_constr("S O", globals_resolve, inductive_resolve).value());
 
 	EXPECT_EQ(
-		let("x", apply(global("S"), {global("O")}), global("nat"), local("x", 0)),
+		constr_let::create("x", constr_apply::create(constr_global::create("S"), {constr_global::create("O")}), constr_global::create("nat"), constr_local::create("x", 0)),
 		coqcic::mgl::parse_constr("let x : nat := S O in x", globals_resolve, inductive_resolve).value());
 
 	auto c = coqcic::mgl::parse_constr(
@@ -64,34 +64,32 @@ TEST(minigallina_test, constr_parse) {
 		"  | S x => S (S x) "
 		"end", globals_resolve, inductive_resolve).value();
 	EXPECT_EQ(
-		match(
-			lambda({{"_", global("nat")}}, global("nat")),
-			global("O"),
+		constr_match::create(
+			constr_lambda::create({{"_", constr_global::create("nat")}}, constr_global::create("nat")),
+			constr_global::create("O"),
 			{
-				{"O", 0, apply(global("S"), {global("O")})},
-				{"S", 1, lambda({{"x", global("nat")}}, apply(global("S"),{apply(global("S"), {local("x", 0)})}))}
+				{"O", 0, constr_apply::create(constr_global::create("S"), {constr_global::create("O")})},
+				{"S", 1, constr_lambda::create({{"x", constr_global::create("nat")}}, constr_apply::create(constr_global::create("S"),{constr_apply::create(constr_global::create("S"), {constr_local::create("x", 0)})}))}
 			}),
 		c);
 
 	EXPECT_EQ(
-		product({{"x", global("nat")}}, global("nat")),
+		constr_product::create({{"x", constr_global::create("nat")}}, constr_global::create("nat")),
 		coqcic::mgl::parse_constr("forall (x : nat), nat", globals_resolve, inductive_resolve).value());
 }
 
 TEST(minigallina_test, constr_fix_parse) {
-	using namespace coqcic::builder;
-
 	auto globals_resolve = [](const std::string& s) -> std::optional<coqcic::constr_t> {
 		if (s == "Coq.Init.Datatypes.nat") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else if (s == "nat") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else if (s == "O") {
-			return global("nat");
+			return constr_global::create("nat");
 		} else if (s == "S") {
-			return product({{{}, global("nat")}}, global("nat"));
+			return constr_product::create({{{}, constr_global::create("nat")}}, constr_global::create("nat"));
 		} else if (s == "Y") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else {
 			return std::nullopt;
 		}
@@ -102,10 +100,10 @@ TEST(minigallina_test, constr_fix_parse) {
 			if (glob->name() == "nat") {
 				return coqcic::one_inductive_t {
 					"nat",
-					builtin_set(),
+					constr_builtin::set(),
 					{
-						{"O", global("nat")},
-						{"S", product({{{}, global("nat")}}, global("nat"))}
+						{"O", constr_global::create("nat")},
+						{"S", constr_product::create({{{}, constr_global::create("nat")}}, constr_global::create("nat"))}
 					}
 				};
 			}
@@ -140,17 +138,15 @@ TEST(minigallina_test, constr_fix_parse) {
 
 
 TEST(minigallina_test, sfb_parse) {
-	using namespace coqcic::builder;
-
 	auto globals_resolve = [](const std::string& s) -> std::optional<coqcic::constr_t> {
 		if (s == "nat") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else if (s == "O") {
-			return global("nat");
+			return constr_global::create("nat");
 		} else if (s == "S") {
-			return product({{{}, global("nat")}}, global("nat"));
+			return constr_product::create({{{}, constr_global::create("nat")}}, constr_global::create("nat"));
 		} else if (s == "Y") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else {
 			return std::nullopt;
 		}
@@ -161,10 +157,10 @@ TEST(minigallina_test, sfb_parse) {
 			if (glob->name() == "nat") {
 				return coqcic::one_inductive_t {
 					"nat",
-					builtin_set(),
+					constr_builtin::set(),
 					{
-						{"O", global("nat")},
-						{"S", product({{{}, global("nat")}}, global("nat"))}
+						{"O", constr_global::create("nat")},
+						{"S", constr_product::create({{{}, constr_global::create("nat")}}, constr_global::create("nat"))}
 					}
 				};
 			}
@@ -173,17 +169,17 @@ TEST(minigallina_test, sfb_parse) {
 	};
 
 	EXPECT_EQ(
-		definition("zero", global("nat"), global("O")),
+		sfb_definition::create("zero", constr_global::create("nat"), constr_global::create("O")),
 		coqcic::mgl::parse_sfb("Definition zero : nat := O.", globals_resolve, inductive_resolve).value());
 
 	EXPECT_EQ(
-		inductive({
+		sfb_inductive::create({
 			{
 				"nat",
-				builtin_set(),
+				constr_builtin::set(),
 				{
-					{"O", global("nat")},
-					{"S", product({{"x", global("nat")}}, global("nat"))}
+					{"O", constr_global::create("nat")},
+					{"S", constr_product::create({{"x", constr_global::create("nat")}}, constr_global::create("nat"))}
 				}
 			}
 		}),
@@ -196,14 +192,14 @@ TEST(minigallina_test, sfb_parse) {
 	);
 
 	EXPECT_EQ(
-		fixpoint(
+		sfb_fixpoint::create(
 			coqcic::fix_group_t {
 				{
 					coqcic::fix_function_t {
 						"dup",
-						{{"x", global("nat")}},
-						global("nat"),
-						apply(global("S"), {apply(local("dup", 1), {local("x", 0)})} )
+						{{"x", constr_global::create("nat")}},
+						constr_global::create("nat"),
+						constr_apply::create(constr_global::create("S"), {constr_apply::create(constr_local::create("dup", 1), {constr_local::create("x", 0)})} )
 					}
 				}
 			}),
@@ -213,13 +209,13 @@ TEST(minigallina_test, sfb_parse) {
 	);
 
 	EXPECT_EQ(
-		inductive({
+		sfb_inductive::create({
 			{
 				"list",
-				builtin_set(),
+				constr_builtin::set(),
 				{
-					{"cons", product({{"x", global("nat")}, {"l", global("list")}}, global("list"))},
-					{"nil", global("list")}
+					{"cons", constr_product::create({{"x", constr_global::create("nat")}, {"l", constr_global::create("list")}}, constr_global::create("list"))},
+					{"nil", constr_global::create("list")}
 				}
 			}
 		}),
@@ -232,29 +228,29 @@ TEST(minigallina_test, sfb_parse) {
 	);
 
 	EXPECT_EQ(
-		inductive({
+		sfb_inductive::create({
 			{
 				"list",
-				product({{"T", builtin_set()}}, builtin_set()),
+				constr_product::create({{"T", constr_builtin::set()}}, constr_builtin::set()),
 				{
 					{
 						"cons",
-						product(
+						constr_product::create(
 							{
-								{"T", builtin_set()},
-								{"x", local("T", 0)},
-								{"l", apply(global("list"), {{local("T", 1)}})}
+								{"T", constr_builtin::set()},
+								{"x", constr_local::create("T", 0)},
+								{"l", constr_apply::create(constr_global::create("list"), {{constr_local::create("T", 1)}})}
 							},
-							apply(global("list"), {{local("T", 2)}})
+							constr_apply::create(constr_global::create("list"), {{constr_local::create("T", 2)}})
 						)
 					},
 					{
 						"nil",
-						product(
+						constr_product::create(
 							{
-								{"T", builtin_set()},
+								{"T", constr_builtin::set()},
 							},
-							apply(global("list"), {{local("T", 0)}})
+							constr_apply::create(constr_global::create("list"), {{constr_local::create("T", 0)}})
 						)
 					}
 				}
@@ -274,11 +270,11 @@ TEST(minigallina_test, simple_module) {
 
 	auto globals_resolve = [](const std::string& s) -> std::optional<coqcic::constr_t> {
 		if (s == "Coq.Init.Datatypes.nat") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else if (s == "Coq.Init.Datatypes.O") {
-			return global("Coq.Init.Datatypes.nat");
+			return constr_global::create("Coq.Init.Datatypes.nat");
 		} else if (s == "Coq.Init.Datatypes.S") {
-			return product({{{}, global("Coq.Init.Datatypes.nat")}}, global("Coq.Init.Datatypes.nat"));
+			return constr_product::create({{{}, constr_global::create("Coq.Init.Datatypes.nat")}}, constr_global::create("Coq.Init.Datatypes.nat"));
 		} else {
 			return std::nullopt;
 		}
@@ -289,10 +285,10 @@ TEST(minigallina_test, simple_module) {
 			if (glob->name() == "Coq.Init.Datatypes.nat") {
 				return coqcic::one_inductive_t {
 					"Coq.Init.Datatypes.nat",
-					builtin_set(),
+					constr_builtin::set(),
 					{
-						{"O", global("Coq.Init.Datatypes.nat")},
-						{"S", product({{{}, global("Coq.Init.Datatypes.nat")}}, global("Coq.Init.Datatypes.nat"))}
+						{"O", constr_global::create("Coq.Init.Datatypes.nat")},
+						{"S", constr_product::create({{{}, constr_global::create("Coq.Init.Datatypes.nat")}}, constr_global::create("Coq.Init.Datatypes.nat"))}
 					}
 				};
 			}
@@ -318,11 +314,11 @@ TEST(minigallina_test, compound_module) {
 
 	auto globals_resolve = [](const std::string& s) -> std::optional<coqcic::constr_t> {
 		if (s == "Coq.Init.Datatypes.nat") {
-			return builtin_set();
+			return constr_builtin::set();
 		} else if (s == "Coq.Init.Datatypes.O") {
-			return global("Coq.Init.Datatypes.nat");
+			return constr_global::create("Coq.Init.Datatypes.nat");
 		} else if (s == "Coq.Init.Datatypes.S") {
-			return product({{{}, global("Coq.Init.Datatypes.nat")}}, global("Coq.Init.Datatypes.nat"));
+			return constr_product::create({{{}, constr_global::create("Coq.Init.Datatypes.nat")}}, constr_global::create("Coq.Init.Datatypes.nat"));
 		} else {
 			return std::nullopt;
 		}
@@ -333,10 +329,10 @@ TEST(minigallina_test, compound_module) {
 			if (glob->name() == "Coq.Init.Datatypes.nat") {
 				return coqcic::one_inductive_t {
 					"Coq.Init.Datatypes.nat",
-					builtin_set(),
+					constr_builtin::set(),
 					{
-						{"O", global("Coq.Init.Datatypes.nat")},
-						{"S", product({{{}, global("Coq.Init.Datatypes.nat")}}, global("Coq.Init.Datatypes.nat"))}
+						{"O", constr_global::create("Coq.Init.Datatypes.nat")},
+						{"S", constr_product::create({{{}, constr_global::create("Coq.Init.Datatypes.nat")}}, constr_global::create("Coq.Init.Datatypes.nat"))}
 					}
 				};
 			}
@@ -362,3 +358,5 @@ TEST(minigallina_test, compound_module) {
 	auto mod = parsed.as_module();
 	EXPECT_TRUE(mod);
 }
+
+}  // namespace coqcic

@@ -296,39 +296,4 @@ sfb_module_type::operator==(const sfb_base& other) const noexcept {
 	}
 }
 
-
-namespace builder {
-
-sfb_t
-definition(std::string id, constr_t type, constr_t value) {
-	return sfb_t(std::make_shared<sfb_definition>(std::move(id), std::move(type), std::move(value)));
-}
-
-sfb_t
-axiom(std::string id, constr_t type) {
-	return sfb_t(std::make_shared<sfb_axiom>(std::move(id), std::move(type)));
-}
-
-sfb_t
-inductive(std::vector<one_inductive_t> one_inductives) {
-	return sfb_t(std::make_shared<sfb_inductive>(std::move(one_inductives)));
-}
-
-sfb_t
-fixpoint(fix_group_t fix_group) {
-	return sfb_t(std::make_shared<sfb_fixpoint>(std::move(fix_group)));
-}
-
-sfb_t
-module_def(std::string id, module_body body) {
-	return sfb_t(std::make_shared<sfb_module>(std::move(id), std::move(body)));
-}
-
-sfb_t
-module_type_def(std::string id, module_body body) {
-	return sfb_t(std::make_shared<sfb_module_type>(std::move(id), std::move(body)));
-}
-
-}  // builder
-
 }  // namespace coqcic

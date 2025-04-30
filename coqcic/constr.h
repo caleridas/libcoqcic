@@ -579,12 +579,17 @@ public:
 	(e.g. as a function argument or "let" expression).
 */
 class constr_local final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	~constr_local() override;
 
 	constr_local(
 		std::string name,
-		std::size_t index);
+		std::size_t index,
+		private_tag
+	);
 
 	void
 	format(std::string& out) const override;
@@ -606,6 +611,10 @@ public:
 	std::size_t
 	index() const noexcept { return index_; }
 
+	static
+	constr_t
+	create(std::string name, std::size_t index);
+
 private:
 	std::string name_;
 	std::size_t index_;
@@ -615,40 +624,16 @@ private:
 	\brief Reference to global name
 */
 class constr_global final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	~constr_global() override;
 
 	explicit
 	constr_global(
-		std::string name);
-
-	void
-	format(std::string& out) const override;
-
-	bool
-	operator==(const constr_base& other) const noexcept override;
-
-	constr_t
-	check(const type_context_t& ctx) const override;
-
-	inline
-	const std::string&
-	name() const noexcept { return name_; }
-
-private:
-	std::string name_;
-};
-
-/**
-	\brief Builtin universe type
-*/
-class constr_builtin final : public constr_base {
-public:
-	~constr_builtin() override;
-
-	constr_builtin(
 		std::string name,
-		std::function<constr_t(const constr_base&)> check
+		private_tag
 	);
 
 	void
@@ -665,20 +650,50 @@ public:
 	name() const noexcept { return name_; }
 
 	static
-	std::shared_ptr<const constr_base>
-	get_set();
+	constr_t
+	create(std::string name);
+
+private:
+	std::string name_;
+};
+
+/**
+	\brief Builtin universe type
+*/
+class constr_builtin final : public constr_base {
+private:
+	struct private_tag {};
+
+public:
+	~constr_builtin() override;
+
+	constr_builtin(
+		std::string name,
+		std::function<constr_t(const constr_base&)> check,
+		private_tag
+	);
+
+	void
+	format(std::string& out) const override;
+
+	bool
+	operator==(const constr_base& other) const noexcept override;
+
+	constr_t
+	check(const type_context_t& ctx) const override;
+
+	inline
+	const std::string&
+	name() const noexcept { return name_; }
 
 	static
-	std::shared_ptr<const constr_base>
-	get_prop();
+	constr_t
+	create(std::string name, std::function<constr_t(const constr_base&)> check);
 
-	static
-	std::shared_ptr<const constr_base>
-	get_sprop();
-
-	static
-	std::shared_ptr<const constr_base>
-	get_type();
+	static constr_t set();
+	static constr_t prop();
+	static constr_t sprop();
+	static constr_t type();
 
 private:
 	std::string name_;
@@ -689,10 +704,13 @@ private:
 	\brief Dependent product.
 */
 class constr_product final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	~constr_product() override;
 
-	constr_product(std::vector<formal_arg_t> args, constr_t restype);
+	constr_product(std::vector<formal_arg_t> args, constr_t restype, private_tag);
 
 	void
 	format(std::string& out) const override;
@@ -726,6 +744,10 @@ public:
 	const constr_t&
 	restype() const noexcept { return restype_; }
 
+	static
+	constr_t
+	create(std::vector<formal_arg_t> args, constr_t restype);
+
 private:
 	std::vector<formal_arg_t> args_;
 	constr_t restype_;
@@ -735,10 +757,13 @@ private:
 	\brief Lambda abstraction.
 */
 class constr_lambda final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	~constr_lambda() override;
 
-	constr_lambda(std::vector<formal_arg_t> args, constr_t body);
+	constr_lambda(std::vector<formal_arg_t> args, constr_t body, private_tag);
 
 	void
 	format(std::string& out) const override;
@@ -760,9 +785,12 @@ public:
 	const constr_t&
 	body() const noexcept { return body_; }
 
+	static
+	constr_t
+	create(std::vector<formal_arg_t> args, constr_t body);
+
 private:
 	std::vector<formal_arg_t> args_;
-	constr_t argtype_;
 	constr_t body_;
 };
 
@@ -770,6 +798,9 @@ private:
 	\brief Let binding.
 */
 class constr_let final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	~constr_let() override;
 
@@ -777,7 +808,8 @@ public:
 		std::optional<std::string> varname,
 		constr_t value,
 		constr_t type,
-		constr_t body
+		constr_t body,
+		private_tag
 	);
 
 	void
@@ -808,6 +840,15 @@ public:
 	const constr_t&
 	body() const noexcept { return body_; }
 
+	static
+	constr_t
+	create(
+		std::optional<std::string> varname,
+		constr_t value,
+		constr_t type,
+		constr_t body
+	);
+
 private:
 	std::optional<std::string> varname_;
 	constr_t value_;
@@ -819,10 +860,13 @@ private:
 	\brief Functional application (call).
 */
 class constr_apply final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	~constr_apply() override;
 
-	constr_apply(constr_t fn, std::vector<constr_t> args);
+	constr_apply(constr_t fn, std::vector<constr_t> args, private_tag);
 
 	void
 	format(std::string& out) const override;
@@ -847,6 +891,10 @@ public:
 	const std::vector<constr_t>&
 	args() const noexcept { return args_; }
 
+	static
+	constr_t
+	create(constr_t fn, std::vector<constr_t> args);
+
 private:
 	constr_t fn_;
 	std::vector<constr_t> args_;
@@ -856,6 +904,9 @@ private:
 	\brief Cast expression.
 */
 class constr_cast final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	enum kind_type {
 		vm_cast,
@@ -866,7 +917,7 @@ public:
 
 	~constr_cast() override;
 
-	constr_cast(constr_t term, kind_type kind, constr_t typeterm);
+	constr_cast(constr_t term, kind_type kind, constr_t typeterm, private_tag);
 
 	void
 	format(std::string& out) const override;
@@ -892,6 +943,10 @@ public:
 	const constr_t&
 	typeterm() const noexcept { return typeterm_; }
 
+	static
+	constr_t
+	create(constr_t term, kind_type kind, constr_t typeterm);
+
 private:
 	constr_t term_;
 	kind_type kind_;
@@ -902,10 +957,13 @@ private:
 	\brief Pattern matching expression.
 */
 class constr_match final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	~constr_match() override;
 
-	constr_match(constr_t casetype, constr_t arg, std::vector<match_branch_t> branches);
+	constr_match(constr_t casetype, constr_t arg, std::vector<match_branch_t> branches, private_tag);
 
 	void
 	format(std::string& out) const override;
@@ -939,6 +997,10 @@ public:
 	const std::vector<match_branch_t>&
 	branches() const noexcept { return branches_; }
 
+	static
+	constr_t
+	create(constr_t casetype, constr_t arg, std::vector<match_branch_t> branches);
+
 private:
 	constr_t casetype_;
 	constr_t arg_;
@@ -949,10 +1011,13 @@ private:
 	\brief Mutual fixpoint function group.
 */
 class constr_fix final : public constr_base {
+private:
+	struct private_tag {};
+
 public:
 	~constr_fix() override;
 
-	constr_fix(std::size_t index, std::shared_ptr<const fix_group_t> group);
+	constr_fix(std::size_t index, std::shared_ptr<const fix_group_t> group, private_tag);
 
 	void
 	format(std::string& out) const override;
@@ -973,6 +1038,10 @@ public:
 	inline
 	const std::shared_ptr<const fix_group_t>&
 	group() const noexcept { return group_; }
+
+	static
+	constr_t
+	create(std::size_t index, std::shared_ptr<const fix_group_t> group);
 
 private:
 	std::size_t index_;
@@ -1020,55 +1089,6 @@ constr_t::visit(Visitor&& vis) const {
 		std::terminate();
 	}
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// builder helpers for constructs
-
-namespace builder {
-
-constr_t
-local(std::string name, std::size_t index);
-
-constr_t
-global(std::string name);
-
-constr_t
-builtin_set();
-
-constr_t
-builtin_prop();
-
-constr_t
-builtin_sprop();
-
-constr_t
-builtin_type();
-
-constr_t
-let(std::optional<std::string> varname, constr_t value, constr_t body);
-
-constr_t
-product(std::vector<formal_arg_t> args, constr_t restype);
-
-constr_t
-lambda(std::vector<formal_arg_t> args, constr_t body);
-
-constr_t
-let(std::optional<std::string> varname, constr_t value, constr_t type, constr_t body);
-
-constr_t
-apply(constr_t fn, std::vector<constr_t> arg);
-
-constr_t
-cast(constr_t term, constr_cast::kind_type kind, constr_t typeterm);
-
-constr_t
-match(constr_t restype, constr_t arg, std::vector<match_branch_t> branches);
-
-constr_t
-fix(std::size_t index, std::shared_ptr<const fix_group_t> group);
-
-}  // builder
 
 }  // namespace coqcic
 

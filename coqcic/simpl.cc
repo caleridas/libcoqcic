@@ -34,7 +34,7 @@ public:
 	std::optional<constr_t>
 	handle_local(const std::string& name, std::size_t index) override {
 		if (index >= index_ + subst_.size() + depth_) {
-			return {builder::local(name, index - subst_.size())};
+			return {constr_local::create(name, index - subst_.size())};
 		} else if (index >= index_ + depth_) {
 			return {subst_[index - index_ - depth_].shift(0, depth_)};
 		} else {

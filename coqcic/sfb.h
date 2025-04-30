@@ -141,15 +141,16 @@ public:
 };
 
 class sfb_definition final : public sfb_base {
+private:
+	struct private_tag {};
+
 public:
 	~sfb_definition() override;
 
 	inline
-	sfb_definition(std::string id, constr_t type, constr_t value
-	) noexcept :
-		id_(std::move(id)),
-		type_(std::move(type)),
-		value_(std::move(value)) {
+	sfb_definition(
+		std::string id, constr_t type, constr_t value, private_tag
+	) noexcept : id_(std::move(id)), type_(std::move(type)), value_(std::move(value)) {
 	}
 
 	void
@@ -173,6 +174,14 @@ public:
 		return value_;
 	}
 
+	static inline
+	sfb_t
+	create(
+		std::string id, constr_t type, constr_t value
+	) {
+		return sfb_t(std::make_shared<sfb_definition>(std::move(id), std::move(type), std::move(value), private_tag {}));
+	}
+
 private:
 	std::string id_;
 	constr_t type_;
@@ -180,17 +189,18 @@ private:
 };
 
 class sfb_axiom final : public sfb_base {
+private:
+	struct private_tag {};
+
 public:
 	~sfb_axiom() override;
 
 	inline
 	sfb_axiom(
 		std::string id,
-		constr_t type
-	) noexcept :
-		id_(std::move(id)),
-		type_(std::move(type))
-	{
+		constr_t type,
+		private_tag
+	) noexcept : id_(std::move(id)), type_(std::move(type)) {
 	}
 
 	void
@@ -209,18 +219,28 @@ public:
 		return type_;
 	}
 
+	static inline
+	sfb_t
+	create(std::string id, constr_t type) {
+		return sfb_t(std::make_shared<sfb_axiom>(std::move(id), std::move(type), private_tag {}));
+	}
+
 private:
 	std::string id_;
 	constr_t type_;
 };
 
 class sfb_fixpoint final : public sfb_base {
+private:
+	struct private_tag {};
+
 public:
 	~sfb_fixpoint() override;
 
 	inline explicit
 	sfb_fixpoint(
-		fix_group_t fix_group
+		fix_group_t fix_group,
+		private_tag
 	) noexcept : fix_group_(std::move(fix_group)) {
 	}
 
@@ -235,17 +255,27 @@ public:
 		return fix_group_;
 	}
 
+	inline static
+	sfb_t
+	create(fix_group_t fix_group) {
+		return sfb_t(std::make_shared<sfb_fixpoint>(std::move(fix_group), private_tag {}));
+	}
+
 private:
 	fix_group_t fix_group_;
 };
 
 class sfb_inductive final : public sfb_base {
+private:
+	struct private_tag {};
+
 public:
 	~sfb_inductive() override;
 
 	inline
 	sfb_inductive(
-		std::vector<one_inductive_t> one_inductives
+		std::vector<one_inductive_t> one_inductives,
+		private_tag
 	) noexcept : one_inductives_(std::move(one_inductives)) {
 	}
 
@@ -258,6 +288,12 @@ public:
 	inline const std::vector<one_inductive_t>&
 	one_inductives() const noexcept {
 		return one_inductives_;
+	}
+
+	static inline
+	sfb_t
+	create(std::vector<one_inductive_t> one_inductives) {
+		return sfb_t(std::make_shared<sfb_inductive>(std::move(one_inductives), private_tag {}));
 	}
 
 private:
@@ -412,13 +448,17 @@ private:
 };
 
 class sfb_module final : public sfb_base {
+private:
+	struct private_tag {};
+
 public:
 	~sfb_module() override;
 
 	inline
 	sfb_module(
 		std::string id,
-		module_body body
+		module_body body,
+		private_tag
 	) noexcept : id_(std::move(id)), body_(std::move(body)) {
 	}
 
@@ -430,6 +470,12 @@ public:
 
 	inline const std::string& id() const noexcept { return id_; }
 	inline const module_body& body() const noexcept { return body_; }
+
+	static inline
+	sfb_t
+	create(std::string id, module_body body) {
+		return sfb_t(std::make_shared<sfb_module>(std::move(id), std::move(body), private_tag {}));
+	}
 
 private:
 	std::string id_;
@@ -437,13 +483,17 @@ private:
 };
 
 class sfb_module_type final : public sfb_base {
+private:
+	struct private_tag {};
+
 public:
 	~sfb_module_type() override;
 
 	inline
 	sfb_module_type(
 		std::string id,
-		module_body body
+		module_body body,
+		private_tag
 	) noexcept : id_(std::move(id)), body_(std::move(body)) {
 	}
 
@@ -455,6 +505,12 @@ public:
 
 	inline const std::string& id() const noexcept { return id_; }
 	inline const module_body& body() const noexcept { return body_; }
+
+	static inline
+	sfb_t
+	create(std::string id, module_body body) {
+		return sfb_t(std::make_shared<sfb_module_type>(std::move(id), std::move(body), private_tag {}));
+	}
 
 private:
 	std::string id_;

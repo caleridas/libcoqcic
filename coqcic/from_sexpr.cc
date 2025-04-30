@@ -158,13 +158,13 @@ fixfunction_from_sexpr(const sexpr& e, std::size_t nfunctions) {
 				std::vector<formal_arg_t> new_fndef_args(fndef_lambda->args().begin() + count, fndef_lambda->args().end());
 
 				if (!new_prod_args.empty()) {
-					sigtype = builder::product(std::move(new_prod_args), sigtype_prod->restype());
+					sigtype = constr_product::create(std::move(new_prod_args), sigtype_prod->restype());
 				} else {
 					sigtype = sigtype_prod->restype();
 				}
 
 				if (!new_fndef_args.empty()) {
-					fndef = builder::lambda(std::move(new_fndef_args), fndef_lambda->body());
+					fndef = constr_lambda::create(std::move(new_fndef_args), fndef_lambda->body());
 				} else {
 					fndef = fndef_lambda->body();
 				}
@@ -195,13 +195,13 @@ constr_from_sexpr(const sexpr& e) {
 			}
 			const auto& name = args[0].as_terminal()->value();
 			if (name == "Prop") {
-				return builder::builtin_prop();
+				return constr_builtin::prop();
 			} else if (name == "Set") {
-				return builder::builtin_set();
+				return constr_builtin::set();
 			} else if (name == "SProp") {
-				return builder::builtin_sprop();
+				return constr_builtin::sprop();
 			} else if (name == "Type") {
-				return builder::builtin_type();
+				return constr_builtin::type();
 			} else {
 				return from_sexpr_error {"Unknown kind of sort", &args[0]};
 			}
@@ -210,7 +210,7 @@ constr_from_sexpr(const sexpr& e) {
 				return from_sexpr_error {"Global requires literal name as single argument", &e};
 			}
 			const auto& name = args[0].as_terminal()->value();
-			return builder::global(name);
+			return constr_global::create(name);
 		} else if (kind == "Local") {
 			if (args.size() != 2) {
 				return from_sexpr_error {"Local requires literal name and index as arguments", &e};
@@ -223,7 +223,7 @@ constr_from_sexpr(const sexpr& e) {
 			if (!index) {
 				return index.error();
 			}
-			return builder::local(name.move_value(), index.move_value());
+			return constr_local::create(name.move_value(), index.move_value());
 		} else if (kind == "Prod") {
 			if (args.size() != 3) {
 				return from_sexpr_error {"Product requires 3 arguments", &e};
@@ -240,7 +240,7 @@ constr_from_sexpr(const sexpr& e) {
 			if (!restype) {
 				return restype.error();
 			}
-			return builder::product({{argname.move_value(), argtype.move_value()}}, restype.move_value());
+			return constr_product::create({{argname.move_value(), argtype.move_value()}}, restype.move_value());
 		} else if (kind == "Lambda") {
 			if (args.size() != 3) {
 				return from_sexpr_error {"Lambda requires 3 arguments", &e};
@@ -257,7 +257,7 @@ constr_from_sexpr(const sexpr& e) {
 			if (!body) {
 				return body.error();
 			}
-			return builder::lambda({{argname.move_value(), argtype.move_value()}}, body.move_value());
+			return constr_lambda::create({{argname.move_value(), argtype.move_value()}}, body.move_value());
 		} else if (kind == "LetIn") {
 			if (args.size() != 4) {
 				return from_sexpr_error {"LetIn requires 4 arguments", &e};
@@ -278,7 +278,7 @@ constr_from_sexpr(const sexpr& e) {
 			if (!body) {
 				return body.error();
 			}
-			return builder::let(name.move_value(), term.move_value(), termtype.move_value(), body.move_value());
+			return constr_let::create(name.move_value(), term.move_value(), termtype.move_value(), body.move_value());
 		} else if (kind == "App") {
 			if (args.size() < 2) {
 				return from_sexpr_error {"Apply requires at least 2 arguments", &e};
@@ -295,7 +295,7 @@ constr_from_sexpr(const sexpr& e) {
 				}
 				app_args.push_back(arg.move_value());
 			}
-			return builder::apply(fn.move_value(), std::move(app_args));
+			return constr_apply::create(fn.move_value(), std::move(app_args));
 		} else if (kind == "Cast") {
 			if (args.size() != 3) {
 				return from_sexpr_error {"Cast requires 3 arguments", &e};
@@ -324,7 +324,7 @@ constr_from_sexpr(const sexpr& e) {
 			} else {
 				return from_sexpr_error {"Unknown kind of cast", &e};
 			}
-			return builder::cast(term.move_value(), kind_enum, typeterm.move_value());
+			return constr_cast::create(term.move_value(), kind_enum, typeterm.move_value());
 		} else if (kind == "Case") {
 			if (args.size() != 4) {
 				return from_sexpr_error {"Case requires at exactly 4 arguments", &e};
@@ -345,7 +345,7 @@ constr_from_sexpr(const sexpr& e) {
 			if (!branches) {
 				return branches.error();
 			}
-			return builder::match(casetype.move_value(), match.move_value(), branches.move_value());
+			return constr_match::create(casetype.move_value(), match.move_value(), branches.move_value());
 		} else if (kind == "Fix") {
 			if (args.size() < 2) {
 				return from_sexpr_error {"Fix requires at least 2 arguments", &e};
@@ -364,7 +364,7 @@ constr_from_sexpr(const sexpr& e) {
 				fns.push_back(fixfn.move_value());
 			}
 
-			return builder::fix(index.move_value(), std::make_shared<fix_group_t>(fix_group_t{std::move(fns)}));
+			return constr_fix::create(index.move_value(), std::make_shared<fix_group_t>(fix_group_t{std::move(fns)}));
 		} else {
 			return from_sexpr_error {"Unhandled kind of constr:" + kind, &e};
 		}
@@ -666,7 +666,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix) {
 			if (auto fix = realvalue.as_fix()) {
 				if (last_fix) {
 					if (*fix->group() == *last_fix) {
-						realvalue = builder::fix(fix->index(), last_fix);
+						realvalue = constr_fix::create(fix->index(), last_fix);
 					} else {
 						last_fix = fix->group();
 					}
@@ -675,7 +675,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix) {
 				}
 			}
 
-			return builder::definition(id.move_value(), type.move_value(), std::move(realvalue));
+			return sfb_definition::create(id.move_value(), type.move_value(), std::move(realvalue));
 		} else if (kind == "Axiom") {
 			if (args.size() != 2) {
 				return from_sexpr_error {"Axiom requires 2 arguments", &e};
@@ -690,7 +690,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix) {
 				return type.error();
 			}
 
-			return builder::axiom(id.move_value(), type.move_value());
+			return sfb_axiom::create(id.move_value(), type.move_value());
 		} else if (kind == "Inductive") {
 			if (args.size() < 1) {
 				return from_sexpr_error {"Requires at least one inductive definition", &e};
@@ -705,7 +705,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix) {
 				inds.push_back(ind.move_value());
 			}
 
-			return builder::inductive(std::move(inds));
+			return sfb_inductive::create(std::move(inds));
 		} else if (kind == "Module") {
 			if (args.size() != 2) {
 				return from_sexpr_error {"Module requires exactly two arguments", &e};
@@ -720,7 +720,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix) {
 				return body.error();
 			}
 
-			return builder::module_def(id.move_value(), body.move_value());
+			return sfb_module::create(id.move_value(), body.move_value());
 		} else if (kind == "ModuleType") {
 			if (args.size() != 2) {
 				return from_sexpr_error {"ModuleType requires exactly two arguments", &e};
@@ -740,7 +740,7 @@ sfb_from_sexpr(const sexpr& e, std::shared_ptr<const fix_group_t>& last_fix) {
 			std::tie(parameters, sfbs) = modsig.move_value();
 			std::reverse(parameters.begin(), parameters.end());
 
-			return builder::module_type_def(
+			return sfb_module_type::create(
 				id.move_value(),
 				module_body(std::move(parameters), std::make_shared<module_body_struct_repr>(std::nullopt, std::move(sfbs))));
 		} else {

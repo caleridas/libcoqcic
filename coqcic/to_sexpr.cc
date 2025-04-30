@@ -46,8 +46,8 @@ sexpr fix_function_to_sexpr(const fix_function_t& fixfn) {
 		"Function",
 		{
 			name_to_sexpr(fixfn.name),
-			constr_to_sexpr(builder::product(fixfn.args, fixfn.restype)),
-			constr_to_sexpr(builder::lambda(fixfn.args, fixfn.body))
+			constr_to_sexpr(constr_product::create(fixfn.args, fixfn.restype)),
+			constr_to_sexpr(constr_lambda::create(fixfn.args, fixfn.body))
 		},
 		0
 	);

@@ -21,29 +21,27 @@ to_vec(const lazy_stack<T>& stack) {
 }  // namespace
 
 TEST(simpl_test, subst_0) {
-	using namespace builder;
-	auto i = lambda(
-		{{"b", global("nat")}},
-		apply(global("plus"), {local("b", 0), local("a", 1)}));
+	auto i = constr_lambda::create(
+		{{"b", constr_global::create("nat")}},
+		constr_apply::create(constr_global::create("plus"), {constr_local::create("b", 0), constr_local::create("a", 1)}));
 
-	auto o = local_subst(i, 0, {global("O")});
-	auto e = lambda(
-		{{"b", global("nat")}},
-		apply(global("plus"), {local("b", 0), global("O")}));
+	auto o = local_subst(i, 0, {constr_global::create("O")});
+	auto e = constr_lambda::create(
+		{{"b", constr_global::create("nat")}},
+		constr_apply::create(constr_global::create("plus"), {constr_local::create("b", 0), constr_global::create("O")}));
 
 	EXPECT_EQ(o, e);
 }
 
 TEST(simpl_test, subst_1) {
-	using namespace builder;
-	auto i = lambda(
-		{{"b", global("nat")}},
-		apply(global("plus"), {local("x", 2), local("a", 1)}));
+	auto i = constr_lambda::create(
+		{{"b", constr_global::create("nat")}},
+		constr_apply::create(constr_global::create("plus"), {constr_local::create("x", 2), constr_local::create("a", 1)}));
 
-	auto o = local_subst(i, 0, {global("O")});
-	auto e = lambda(
-		{{"b", global("nat")}},
-		apply(global("plus"), {local("x", 1), global("O")}));
+	auto o = local_subst(i, 0, {constr_global::create("O")});
+	auto e = constr_lambda::create(
+		{{"b", constr_global::create("nat")}},
+		constr_apply::create(constr_global::create("plus"), {constr_local::create("x", 1), constr_global::create("O")}));
 
 	EXPECT_EQ(o, e);
 }

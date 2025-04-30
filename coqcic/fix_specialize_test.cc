@@ -2,7 +2,7 @@
 
 #include "gtest/gtest.h"
 
-using namespace coqcic::builder;
+namespace coqcic {
 
 TEST(fix_specialize_test, list_reverse) {
 	// This is the list "rev" function with signature:
@@ -14,24 +14,24 @@ TEST(fix_specialize_test, list_reverse) {
 		{
 			{
 				"rev",
-				{{"T", builtin_type()}, {"l", apply(global("list"), {local("T", 0)})}},
-				apply(global("list"), {local("T", 1)}),
-				match(
-					apply(global("list"), {local("T", 2)}),
-					local("l", 0),
+				{{"T", constr_builtin::type()}, {"l", constr_apply::create(constr_global::create("list"), {constr_local::create("T", 0)})}},
+				constr_apply::create(constr_global::create("list"), {constr_local::create("T", 1)}),
+				constr_match::create(
+					constr_apply::create(constr_global::create("list"), {constr_local::create("T", 2)}),
+					constr_local::create("l", 0),
 					{
 						{
 							"nil", 0,
-							apply(global("nil"), {local("T", 1)})
+							constr_apply::create(constr_global::create("nil"), {constr_local::create("T", 1)})
 						},
 						{
 							"cons", 2,
-							apply(
-								global("app"),
+							constr_apply::create(
+								constr_global::create("app"),
 								{
-									local("T", 3),
-									apply(local("rev", 4), {local("T", 3), local("l", 1)}),
-									apply(global("cons"), {local("T", 3), local("x", 0), apply(global("nil"), {local("T", 3)})})
+									constr_local::create("T", 3),
+									constr_apply::create(constr_local::create("rev", 4), {constr_local::create("T", 3), constr_local::create("l", 1)}),
+									constr_apply::create(constr_global::create("cons"), {constr_local::create("T", 3), constr_local::create("x", 0), constr_apply::create(constr_global::create("nil"), {constr_local::create("T", 3)})})
 								}
 							)
 						}
@@ -51,30 +51,30 @@ TEST(fix_specialize_test, list_reverse) {
 	EXPECT_EQ(spec_args, spec->functions[0].spec_args);
 
 	auto new_grp = apply_fix_specialization(
-		grp, *spec, {global("nat")}, [](std::size_t) -> std::string { return std::string("rev_nat"); });
+		grp, *spec, {constr_global::create("nat")}, [](std::size_t) -> std::string { return std::string("rev_nat"); });
 
 	coqcic::fix_group_t expect_grp{
 		{
 			{
 				"rev_nat",
-				{{"l", apply(global("list"), {global("nat")})}},
-				apply(global("list"), {global("nat")}),
-				match(
-					apply(global("list"), {global("nat")}),
-					local("l", 0),
+				{{"l", constr_apply::create(constr_global::create("list"), {constr_global::create("nat")})}},
+				constr_apply::create(constr_global::create("list"), {constr_global::create("nat")}),
+				constr_match::create(
+					constr_apply::create(constr_global::create("list"), {constr_global::create("nat")}),
+					constr_local::create("l", 0),
 					{
 						{
 							"nil", 0,
-							apply(global("nil"), {global("nat")})
+							constr_apply::create(constr_global::create("nil"), {constr_global::create("nat")})
 						},
 						{
 							"cons", 2,
-							apply(
-								global("app"),
+							constr_apply::create(
+								constr_global::create("app"),
 								{
-									global("nat"),
-									apply(local("rev_nat", 3), {local("l", 1)}),
-									apply(global("cons"), {global("nat"), local("x", 0), apply(global("nil"), {global("nat")})})
+									constr_global::create("nat"),
+									constr_apply::create(constr_local::create("rev_nat", 3), {constr_local::create("l", 1)}),
+									constr_apply::create(constr_global::create("cons"), {constr_global::create("nat"), constr_local::create("x", 0), constr_apply::create(constr_global::create("nil"), {constr_global::create("nat")})})
 								}
 							)
 						}
@@ -98,3 +98,5 @@ TEST(fix_specialize_test, list_reverse) {
 
 	std::cout << expect_grp.functions[0].body.debug_string() << "\n";
 }
+
+}  // namespace coqcic

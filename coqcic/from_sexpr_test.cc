@@ -327,18 +327,18 @@ TEST(from_sexpr_test, parse_fix_expression) {
 
 	EXPECT_EQ(
 		group.get_function_signature(0),
-		coqcic::builder::product(
+		coqcic::constr_product::create(
 			{
 				{
 					"n",
-					coqcic::builder::global("Coq.Init.Datatypes.nat")
+					coqcic::constr_global::create("Coq.Init.Datatypes.nat")
 				},
 				{
 					"t",
-					coqcic::builder::local("T", 1)
+					coqcic::constr_local::create("T", 1)
 				}
 			},
-			coqcic::builder::local("T", 2)
+			coqcic::constr_local::create("T", 2)
 		)
 	);
 }

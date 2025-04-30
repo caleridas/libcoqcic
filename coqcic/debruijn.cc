@@ -58,10 +58,10 @@ namespace coqcic {
 
 	The following product expression:
 	\code
-	'1 -> '1 -> '0 '2
+	'1 -> '1 -> '0 '3
 	\endcode
 
-	will resolve to an equivalent product of the followingtype
+	will resolve to the following product:
 
 	\code
 	nat -> F -> F nat
@@ -90,28 +90,33 @@ namespace coqcic {
 	Given the following stack with variable types:
 
 	\code
-	0 = plus : nat -> nat -> nat
-	1 = 21 : nat
+	0 = nat -> nat -> nat : Set
+	1 = nat : Set
 	\endcode
 
 	The following lambda expression:
 	\code
-	'1 => '1 => '0 '2 '2
+	'1 => '1 => '0 '1 '1
 	\endcode
 
 	will resolve to a lambda expression of the following _type_
 	(after resolving against types from the existing stack):
 
 	\code
-	nat => add => '0 '2 '2
+	nat -> (nat -> nat -> nat) -> nat
 	\endcode
 
-	and to the following _value_ after resolving actual arguments:
+	and to the following more specific lambda expression:
 
 	\code
-	plus 21 21 = 42
+	nat => (nat -> nat -> nat) => '0 '1 '1
 	\endcode
 
+	which could more suggestively be written as:
+
+	\code
+	(n : nat) => (f : nat -> nat -> nat) => f n n
+	\endcode
 
 	\section de_bruijn_let let de Bruijn indices
 
@@ -141,7 +146,6 @@ namespace coqcic {
 	\code
 	let a := 5 + 12 in a + 5 = (5 + 12) + 5 = 22
 	\endcode
-
 
 	\section de_bruijn_fix fix de Bruijn indices
 

@@ -5,6 +5,8 @@
 #include "coqcic/from_sexpr.h"
 #include "coqcic/parse_sexpr.h"
 
+namespace coqcic {
+
 class to_sexpr_test : public ::testing::Test {
 public:
 	inline void
@@ -30,12 +32,16 @@ public:
 };
 
 TEST_F(to_sexpr_test, parse_success) {
-	using namespace coqcic::builder;
-
 	validate_constr_roundtrip(
-		global("nat")
+		constr_global::create("nat")
 	);
 	validate_constr_roundtrip(
-		let("foo", apply(global("S"), {global("O")}), global("nat"), apply(global("S"), {local("foo", 0)}))
+		constr_let::create(
+			"foo",
+			constr_apply::create(constr_global::create("S"), {constr_global::create("O")}),
+			constr_global::create("nat"), constr_apply::create(constr_global::create("S"), {constr_local::create("foo", 0)})
+		)
 	);
 }
+
+}  // namespace coqcic

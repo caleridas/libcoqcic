@@ -5,11 +5,24 @@
 
 namespace coqcic {
 
-// Substitute all occurrences of local variables starting at "index" with
-// the expressions given by "subst". The substitutes themselves may contain local
-// variable references which are assumed to be valid at the level of the
-// expression just given (i.e. they will be shifted downwards if the substituion
-// occurs at a deeper level).
+/**
+	\brief Substitutes values for unbound local variables
+
+	\param expr
+		Expression wherein substution is performed
+
+	\param substitutes
+		Values to be substituted for local variables
+
+	\returns
+		Substituted expression
+
+	Substitute all occurrences of local variables starting at "index" with
+	the expressions given by "subst". The substitutes themselves may contain local
+	variable references which are assumed to be valid at the level of the
+	expression just given (i.e. they will be shifted downwards if the substituion
+	occurs at a deeper level).
+*/
 constr_t
 local_subst(
 	const constr_t& input,
